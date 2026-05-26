@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Link Steward 设置</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main>
+      <h1>Link Steward</h1>
+      <label>
+        服务端地址
+        <input id="serverUrl" type="url" placeholder="http://localhost:3088" />
+      </label>
+      <label>
+        API token
+        <input id="apiToken" type="password" placeholder="lst_..." />
+      </label>
+      <label>
+        设备名称
+        <input id="deviceName" type="text" placeholder="Mac Chrome" />
+      </label>
+      <button id="save">保存</button>
+      <button id="test" type="button">测试连接</button>
+      <p id="status"></p>
+    </main>
+    <script type="module" src="options.js"></script>
+  </body>
+</html>

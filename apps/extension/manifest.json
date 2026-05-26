@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "Link Steward",
+  "version": "0.1.0",
+  "description": "Save pages and links to a self-hosted Link Steward server.",
+  "permissions": ["bookmarks", "contextMenus", "storage", "tabs"],
+  "host_permissions": ["http://*/*", "https://*/*"],
+  "background": {
+    "service_worker": "src/background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_title": "Link Steward",
+    "default_popup": "src/popup.html"
+  },
+  "options_page": "src/options.html"
+}

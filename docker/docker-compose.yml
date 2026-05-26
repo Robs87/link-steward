@@ -1,0 +1,14 @@
+services:
+  link-steward:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: link-steward
+    ports:
+      - "3088:3088"
+    environment:
+      LINK_STEWARD_DATA_DIR: /data
+      LINK_STEWARD_COOKIE_SECRET: change-this-secret
+    volumes:
+      - ${LINK_STEWARD_HOST_DATA_DIR:-./data}:/data
+    restart: unless-stopped

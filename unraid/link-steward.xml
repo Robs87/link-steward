@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<Container version="2">
+  <Name>Link Steward</Name>
+  <Repository>ghcr.io/robs87/link-steward:latest</Repository>
+  <Registry>https://github.com/Robs87/link-steward/pkgs/container/link-steward</Registry>
+  <Network>bridge</Network>
+  <MyIP/>
+  <Shell>sh</Shell>
+  <Privileged>false</Privileged>
+  <Support>https://github.com/Robs87/link-steward</Support>
+  <Project>https://github.com/Robs87/link-steward</Project>
+  <Overview>Self-hosted bookmark steward for Unraid, browser extensions, shared collections, and local browser bookmark double-write.</Overview>
+  <Category>Productivity: Tools:</Category>
+  <WebUI>http://[IP]:[PORT:3088]/</WebUI>
+  <TemplateURL>https://raw.githubusercontent.com/Robs87/link-steward/main/unraid/link-steward.xml</TemplateURL>
+  <Icon>https://raw.githubusercontent.com/Robs87/link-steward/main/unraid/link-steward.png</Icon>
+  <ExtraParams/>
+  <PostArgs/>
+  <CPUset/>
+  <DateInstalled/>
+  <DonateText/>
+  <DonateLink/>
+  <Requires/>
+  <Config Name="Web UI Port" Target="3088" Default="3088" Mode="tcp" Description="Web UI and API port." Type="Port" Display="always" Required="true" Mask="false">3088</Config>
+  <Config Name="App Data" Target="/data" Default="/mnt/user/appdata/link-steward" Mode="rw" Description="Persistent SQLite database and app data." Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/link-steward</Config>
+  <Config Name="Cookie Secret" Target="LINK_STEWARD_COOKIE_SECRET" Default="change-this-secret-before-use" Mode="" Description="Random secret used to sign login cookies. Change this before regular use." Type="Variable" Display="always" Required="true" Mask="true">change-this-secret-before-use</Config>
+</Container>
