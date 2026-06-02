@@ -1,5 +1,5 @@
 body {
-  min-width: 260px;
+  min-width: 300px;
   margin: 0;
   color: #1f2933;
   font: 14px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -17,15 +17,31 @@ h1 {
   font-size: 18px;
 }
 
+.intro {
+  color: #475569;
+  line-height: 1.45;
+}
+
 label {
   display: grid;
   gap: 6px;
+}
+
+.inline-check {
+  grid-template-columns: 16px 1fr;
+  align-items: center;
 }
 
 input {
   border: 1px solid #cbd5e1;
   border-radius: 6px;
   padding: 9px;
+}
+
+input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  padding: 0;
 }
 
 button {
@@ -37,8 +53,36 @@ button {
   cursor: pointer;
 }
 
+.actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.secondary {
+  color: #334155;
+  background: #e2e8f0;
+}
+
+.danger {
+  color: #fff;
+  background: #b42318;
+}
+
 p {
   min-height: 18px;
   margin: 0;
   color: #475569;
+}
+
+#status[data-tone="ok"] {
+  color: #0f766e;
+}
+
+#status[data-tone="warn"] {
+  color: #92400e;
+}
+
+#status[data-tone="error"] {
+  color: #b42318;
 }

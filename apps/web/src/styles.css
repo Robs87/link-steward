@@ -71,6 +71,10 @@ input {
 }
 
 button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   border: 0;
   border-radius: 6px;
   padding: 11px 14px;
@@ -215,6 +219,26 @@ header h1 {
   justify-self: start;
 }
 
+.inline-form {
+  grid-template-columns: minmax(180px, 1fr) minmax(160px, 220px) auto;
+  align-items: end;
+  margin-top: 0;
+}
+
+.inline-form label {
+  display: grid;
+  gap: 6px;
+  color: #475569;
+  font-size: 13px;
+}
+
+.token-box {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 10px;
+  align-items: center;
+}
+
 .tool-panel code {
   display: block;
   overflow-wrap: anywhere;
@@ -222,6 +246,10 @@ header h1 {
   border-radius: 6px;
   background: #f8fafc;
   padding: 12px;
+}
+
+.status-line {
+  color: #0f766e;
 }
 
 .section-header {
@@ -252,6 +280,11 @@ header h1 {
   background: #e2e8f0;
 }
 
+.danger {
+  color: #fff;
+  background: #b42318;
+}
+
 .empty {
   border: 1px dashed #cbd5e1;
   border-radius: 8px;
@@ -265,6 +298,56 @@ header h1 {
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+.device-list {
+  display: grid;
+  gap: 8px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.device-list li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 14px;
+}
+
+.device-list li.revoked {
+  background: #f8fafc;
+  color: #64748b;
+}
+
+.device-list strong,
+.device-list span {
+  display: block;
+}
+
+.device-list span {
+  margin-top: 4px;
+  color: #64748b;
+  font-size: 13px;
+}
+
+@media (max-width: 820px) {
+  .app-shell {
+    grid-template-columns: 1fr;
+  }
+
+  aside {
+    position: static;
+  }
+
+  .metric-grid,
+  .inline-form,
+  .token-box {
+    grid-template-columns: 1fr;
+  }
 }
 
 .bookmark-list li {

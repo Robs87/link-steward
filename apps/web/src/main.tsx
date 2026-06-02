@@ -2,13 +2,16 @@ import { StrictMode, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
   Bookmark,
+  Copy,
   ExternalLink,
   FolderKanban,
   LogOut,
+  Plus,
   RefreshCw,
   Server,
   Settings,
   ShieldCheck,
+  Trash2,
   Upload
 } from "lucide-react";
 import "./styles.css";
@@ -35,6 +38,16 @@ type BookmarkRow = {
   createdAt: string;
 };
 
+type ExtensionDevice = {
+  id: string;
+  deviceName: string;
+  browser: string | null;
+  extensionVersion: string | null;
+  createdAt: string;
+  lastSeenAt: string | null;
+  revokedAt: string | null;
+};
+
 async function api<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(path, {
     ...init,
@@ -57,6 +70,7 @@ function App() {
   const [activeView, setActiveView] = useState<AppView>(getViewFromHash);
   const [user, setUser] = useState<User | null>(null);
   const [bookmarks, setBookmarks] = useState<BookmarkRow[]>([]);
+  const [extensionDevices, setExtensionDevices] = useState<ExtensionDevice[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [extensionToken, setExtensionToken] = useState<string | null>(null);
 
@@ -71,7 +85,7 @@ function App() {
       try {
         const me = await api<{ user: User }>("/api/auth/me");
         setUser(me.user);
-        await loadBookmarks();
+        await Promise.all([loadBookmarks(), loadExtensionDevices()]);
         setMode("ready");
       } catch {
         setMode("login");
@@ -110,7 +124,7 @@ function App() {
         body: JSON.stringify(mode === "setup" ? payload : { email: payload.email, password: payload.password })
       });
       setUser(result.user);
-      await loadBookmarks();
+      await Promise.all([loadBookmarks(), loadExtensionDevices()]);
       setMode("ready");
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "认证失败");
@@ -122,6 +136,7 @@ function App() {
     setUser(null);
     setExtensionToken(null);
     setBookmarks([]);
+    setExtensionDevices([]);
     setMode("login");
   }
 
@@ -130,16 +145,30 @@ function App() {
     setBookmarks(result.bookmarks);
   }
 
-  async function createExtensionToken() {
+  async function loadExtensionDevices() {
+    const result = await api<{ devices: ExtensionDevice[] }>("/api/extension/devices");
+    setExtensionDevices(result.devices);
+  }
+
+  async function createExtensionToken(input?: { deviceName?: string; browser?: string }) {
     const result = await api<{ token: string }>("/api/extension/tokens", {
       method: "POST",
       body: JSON.stringify({
-        deviceName: "Browser Extension",
-        browser: "Chrome/Edge",
+        deviceName: input?.deviceName || "Browser Extension",
+        browser: input?.browser || "Chrome/Edge",
         extensionVersion: "0.1.0"
       })
     });
     setExtensionToken(result.token);
+    await loadExtensionDevices();
+  }
+
+  async function revokeDevice(deviceId: string) {
+    await api(`/api/extension/devices/${deviceId}`, {
+      method: "DELETE",
+      body: "{}"
+    });
+    await loadExtensionDevices();
   }
 
   if (mode === "loading") {
@@ -213,7 +242,16 @@ function App() {
         {activeView === "library" ? <LibraryView bookmarks={bookmarks} loadBookmarks={loadBookmarks} /> : null}
         {activeView === "collections" ? <CollectionsView /> : null}
         {activeView === "importExport" ? <ImportExportView /> : null}
-        {activeView === "settings" ? <SettingsView user={user} /> : null}
+        {activeView === "settings" ? (
+          <SettingsView
+            user={user}
+            extensionDevices={extensionDevices}
+            extensionToken={extensionToken}
+            createExtensionToken={createExtensionToken}
+            revokeDevice={revokeDevice}
+            clearExtensionToken={() => setExtensionToken(null)}
+          />
+        ) : null}
       </section>
     </main>
   );
@@ -275,7 +313,7 @@ function OverviewView({
       <section className="tool-panel">
         <div>
           <h2>浏览器扩展</h2>
-          <p>生成 token 后，在扩展设置页填写服务端地址和 API token。</p>
+          <p>生成 token 后，在扩展设置页填写服务端地址和 API token。完整设备管理在设置页。</p>
         </div>
         <button onClick={createExtensionToken}>生成扩展 token</button>
         {extensionToken ? <code>{extensionToken}</code> : null}
@@ -320,14 +358,129 @@ function ImportExportView() {
   );
 }
 
-function SettingsView({ user }: { user: User | null }) {
+function SettingsView({
+  user,
+  extensionDevices,
+  extensionToken,
+  createExtensionToken,
+  revokeDevice,
+  clearExtensionToken
+}: {
+  user: User | null;
+  extensionDevices: ExtensionDevice[];
+  extensionToken: string | null;
+  createExtensionToken: (input?: { deviceName?: string; browser?: string }) => Promise<void>;
+  revokeDevice: (deviceId: string) => Promise<void>;
+  clearExtensionToken: () => void;
+}) {
+  const [deviceName, setDeviceName] = useState("Browser Extension");
+  const [browser, setBrowser] = useState("Chrome/Edge");
+  const [status, setStatus] = useState<string | null>(null);
+
+  async function submitDevice(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setStatus(null);
+    try {
+      await createExtensionToken({ deviceName, browser });
+      setStatus("已生成新 token。复制后请立即保存到扩展设置页。");
+    } catch (reason) {
+      setStatus(reason instanceof Error ? reason.message : "生成失败");
+    }
+  }
+
+  async function copyToken() {
+    if (!extensionToken) return;
+    await navigator.clipboard.writeText(extensionToken);
+    setStatus("已复制 token");
+  }
+
   return (
-    <section className="placeholder-panel">
-      <Settings size={24} />
-      <h2>设置</h2>
-      <p>{user ? `${user.email} · ${user.role}` : "当前账号设置"}</p>
-    </section>
+    <>
+      <section className="view-heading">
+        <Settings size={22} />
+        <div>
+          <h2>设置</h2>
+          <p>{user ? `${user.email} · ${user.role}` : "当前账号设置"}</p>
+        </div>
+      </section>
+      <section className="tool-panel">
+        <div className="section-header">
+          <div>
+            <h2>扩展 token</h2>
+            <p>为 Chrome / Edge 扩展生成一次性可见 token，并管理已连接设备。</p>
+          </div>
+        </div>
+        <form className="inline-form" onSubmit={submitDevice}>
+          <label>
+            设备名称
+            <input value={deviceName} onChange={(event) => setDeviceName(event.target.value)} required />
+          </label>
+          <label>
+            浏览器
+            <input value={browser} onChange={(event) => setBrowser(event.target.value)} />
+          </label>
+          <button type="submit">
+            <Plus size={16} />
+            生成 token
+          </button>
+        </form>
+        {extensionToken ? (
+          <div className="token-box">
+            <code>{extensionToken}</code>
+            <button className="subtle" onClick={copyToken} type="button">
+              <Copy size={16} />
+              复制
+            </button>
+            <button className="subtle" onClick={clearExtensionToken} type="button">
+              隐藏
+            </button>
+          </div>
+        ) : null}
+        {status ? <p className="status-line">{status}</p> : null}
+      </section>
+      <section className="list-panel">
+        <div className="section-header">
+          <div>
+            <h2>已连接扩展设备</h2>
+            <p>撤销后，对应扩展需要重新生成并填写 token。</p>
+          </div>
+        </div>
+        {extensionDevices.length === 0 ? (
+          <p className="empty">暂无扩展设备</p>
+        ) : (
+          <ul className="device-list">
+            {extensionDevices.map((device) => (
+              <li key={device.id} className={device.revokedAt ? "revoked" : ""}>
+                <div>
+                  <strong>{device.deviceName}</strong>
+                  <span>
+                    {device.browser || "未知浏览器"} · 创建 {formatDate(device.createdAt)}
+                    {device.lastSeenAt ? ` · 最近连接 ${formatDate(device.lastSeenAt)}` : ""}
+                    {device.revokedAt ? ` · 已撤销 ${formatDate(device.revokedAt)}` : ""}
+                  </span>
+                </div>
+                {!device.revokedAt ? (
+                  <button className="icon-button danger" onClick={() => revokeDevice(device.id)} aria-label={`撤销 ${device.deviceName}`}>
+                    <Trash2 size={16} />
+                  </button>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+    </>
   );
+}
+
+function formatDate(value: string) {
+  return new Intl.DateTimeFormat("zh-CN", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit"
+  }).format(new Date(value));
 }
 
 function BookmarkList({

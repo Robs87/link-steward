@@ -9,7 +9,9 @@ import {
   getUserByExtensionToken,
   getUserByEmail,
   getUserBySession,
+  listExtensionDevices,
   ownerExists,
+  revokeExtensionDevice,
   revokeSession,
   toPublicUser,
   verifyPassword
@@ -48,6 +50,10 @@ const createExtensionTokenSchema = z.object({
   deviceName: z.string().min(1).max(120),
   browser: z.string().max(80).optional(),
   extensionVersion: z.string().max(40).optional()
+});
+
+const deviceIdParamsSchema = z.object({
+  deviceId: z.string().uuid()
 });
 
 const sessionCookieName = "ls_session";
@@ -132,6 +138,34 @@ export async function registerRoutes(app: FastifyInstance, db: DatabaseSync, con
     });
 
     return reply.code(201).send(token);
+  });
+
+  app.get("/api/extension/devices", async (request, reply) => {
+    const user = getUserBySession(db, request.cookies[sessionCookieName]);
+    if (!user) {
+      return reply.code(401).send({ error: "UNAUTHENTICATED" });
+    }
+
+    return { devices: listExtensionDevices(db, user.id) };
+  });
+
+  app.delete("/api/extension/devices/:deviceId", async (request, reply) => {
+    const user = getUserBySession(db, request.cookies[sessionCookieName]);
+    if (!user) {
+      return reply.code(401).send({ error: "UNAUTHENTICATED" });
+    }
+
+    const params = deviceIdParamsSchema.parse(request.params);
+    const revoked = revokeExtensionDevice(db, {
+      userId: user.id,
+      deviceId: params.deviceId
+    });
+
+    if (!revoked) {
+      return reply.code(404).send({ error: "DEVICE_NOT_FOUND" });
+    }
+
+    return { ok: true };
   });
 
   app.get("/api/extension/me", async (request, reply) => {

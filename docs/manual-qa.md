@@ -22,19 +22,42 @@ Expected:
 
 ## Extension Token
 
-1. Click `生成扩展 token`.
-2. Copy the `lst_...` token.
-3. Open Chrome or Edge extension management.
-4. Enable developer mode.
-5. Load unpacked extension from `apps/extension`.
-6. Open extension options.
-7. Set:
-   - server URL: `http://localhost:3088`
-   - API token: copied `lst_...` token
-   - device name: local browser name
-8. Click `测试连接`.
+1. Open Web UI `设置`.
+2. Enter a device name and browser label.
+3. Click `生成 token`.
+4. Confirm the device appears in `已连接扩展设备`.
+5. Copy the one-time `lst_...` token.
+6. Hide the token.
+7. Open Chrome or Edge extension management.
+8. Enable developer mode.
+9. Load unpacked extension from `apps/extension`.
+10. Open extension options.
+11. Set:
+    - server URL: `http://localhost:3088`
+    - API token: copied `lst_...` token
+    - device name: local browser name
+12. Click `测试连接`.
 
-Expected: `连接成功`.
+Expected:
+
+- Web UI lists the extension device.
+- Extension options shows `连接成功`.
+
+## Extension Token Revocation
+
+1. In Web UI `设置`, revoke an active extension device.
+2. Click `测试连接` in extension options.
+
+Expected: extension options shows `API token 无效或已被撤销`.
+
+Recovery:
+
+1. Generate a new token in Web UI `设置`.
+2. Copy the `lst_...` token.
+3. Paste it into extension options.
+4. Save and test again.
+
+Expected: extension options shows `连接成功`.
 
 ## Save Current Tab
 

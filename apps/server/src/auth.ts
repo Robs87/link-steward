@@ -24,6 +24,16 @@ type ExtensionDeviceRow = {
   token_salt: string;
 };
 
+export type PublicExtensionDevice = {
+  id: string;
+  deviceName: string;
+  browser: string | null;
+  extensionVersion: string | null;
+  createdAt: string;
+  lastSeenAt: string | null;
+  revokedAt: string | null;
+};
+
 export function hashPassword(password: string, salt = randomBytes(16).toString("hex")) {
   const hash = scryptSync(password, salt, 64).toString("hex");
   return { hash, salt };
@@ -165,6 +175,36 @@ export function createExtensionToken(
   );
 
   return { token, deviceId };
+}
+
+export function listExtensionDevices(db: DatabaseSync, userId: string): PublicExtensionDevice[] {
+  const rows = db.prepare(`
+    SELECT
+      id,
+      device_name AS deviceName,
+      browser,
+      extension_version AS extensionVersion,
+      created_at AS createdAt,
+      last_seen_at AS lastSeenAt,
+      revoked_at AS revokedAt
+    FROM extension_devices
+    WHERE user_id = ?
+    ORDER BY revoked_at IS NULL DESC, created_at DESC
+  `).all(userId) as PublicExtensionDevice[];
+
+  return rows;
+}
+
+export function revokeExtensionDevice(db: DatabaseSync, input: { userId: string; deviceId: string }) {
+  const result = db.prepare(`
+    UPDATE extension_devices
+    SET revoked_at = ?
+    WHERE id = ?
+      AND user_id = ?
+      AND revoked_at IS NULL
+  `).run(new Date().toISOString(), input.deviceId, input.userId);
+
+  return result.changes > 0;
 }
 
 export function getUserByExtensionToken(db: DatabaseSync, token: string | undefined) {

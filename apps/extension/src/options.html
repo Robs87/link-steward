@@ -8,6 +8,7 @@
   <body>
     <main>
       <h1>Link Steward</h1>
+      <p class="intro">先在 Web 设置页生成扩展 token，再粘贴到这里。保存后可以测试连接。</p>
       <label>
         服务端地址
         <input id="serverUrl" type="url" placeholder="http://localhost:3088" />
@@ -16,12 +17,19 @@
         API token
         <input id="apiToken" type="password" placeholder="lst_..." />
       </label>
+      <label class="inline-check">
+        <input id="showToken" type="checkbox" />
+        显示 token
+      </label>
       <label>
         设备名称
         <input id="deviceName" type="text" placeholder="Mac Chrome" />
       </label>
-      <button id="save">保存</button>
-      <button id="test" type="button">测试连接</button>
+      <div class="actions">
+        <button id="save">保存</button>
+        <button id="test" class="secondary" type="button">测试连接</button>
+      </div>
+      <button id="clear" class="danger" type="button">清除 token</button>
       <p id="status"></p>
     </main>
     <script type="module" src="options.js"></script>
