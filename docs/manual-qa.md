@@ -80,6 +80,66 @@ Expected:
 - Popup says `服务端已有该书签`.
 - No duplicate local bookmark is created by Link Steward.
 
+## Web Bookmark Management
+
+1. Open Web UI `个人库`.
+2. Search by a saved page title, domain, or tag.
+3. Edit the bookmark title and description.
+4. Add comma-separated tags.
+5. Move the bookmark to another collection.
+6. Save the row.
+
+Expected:
+
+- Search returns the expected bookmark.
+- The edited title, description, tags, and collection persist after refresh.
+
+Archive:
+
+1. Click `归档` on a bookmark.
+2. Change status filter to `已归档`.
+3. Search again.
+
+Expected: the archived bookmark appears only under the archived/all status filters.
+
+## Collection Management
+
+1. Open Web UI `Collection`.
+2. Create a workspace collection.
+3. Rename it and save.
+4. Archive it.
+
+Expected:
+
+- The collection appears in the list with bookmark count.
+- Archived collections disappear from active bookmark move/import selectors.
+
+## Import / Export
+
+HTML import:
+
+1. Open Web UI `导入 / 导出`.
+2. Select a target collection.
+3. Upload or paste a Chrome / Edge bookmarks HTML export.
+4. Click `导入 HTML`.
+
+Expected:
+
+- New bookmarks appear in `个人库`.
+- Duplicate normalized URLs are skipped and counted in the import result.
+
+Export:
+
+1. Open Web UI `导入 / 导出`.
+2. Optionally select a collection.
+3. Click `HTML`, `JSON`, and `Markdown`.
+
+Expected:
+
+- HTML export contains a Netscape bookmark file structure and can be imported by browsers.
+- JSON export includes bookmark metadata, tags, and collection names.
+- Markdown export groups links by collection.
+
 ## Context Menu Save
 
 1. Right-click a page and choose `保存当前页面到 Link Steward`, or right-click a link and choose `保存链接到 Link Steward`.

@@ -13,12 +13,28 @@ The container serves both:
 - Web UI: `http://SERVER_IP:3088/`
 - Health check: `http://SERVER_IP:3088/api/health`
 
+## Usable Features
+
+- Owner setup and cookie login.
+- Chrome / Edge extension token management.
+- Extension save flow: server first, then local browser bookmark write to `Link Steward/Inbox`.
+- Web bookmark management:
+  - search by title, URL, domain, description, or tag;
+  - edit title, description, tags, and collection;
+  - archive bookmarks;
+  - create and update collections.
+- Browser bookmarks HTML import.
+- HTML, JSON, and Markdown export.
+- SQLite persistence under `/data` in Docker / Unraid.
+
 ## Docker Compose
 
 ```bash
 LINK_STEWARD_HOST_DATA_DIR=/mnt/user/appdata/link-steward \
 docker compose -f docker/docker-compose.yml up -d
 ```
+
+Then open `http://SERVER_IP:3088/`, create the Owner account, generate an extension token in `设置`, and load `apps/extension` as an unpacked Chrome / Edge extension during local testing.
 
 ## Unraid
 

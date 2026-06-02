@@ -160,6 +160,40 @@ const migrations = [
       CREATE INDEX IF NOT EXISTS idx_bookmark_sources_bookmark_id ON bookmark_sources(bookmark_id);
       CREATE INDEX IF NOT EXISTS idx_extension_devices_user_id ON extension_devices(user_id);
     `
+  },
+  {
+    id: "0003_tags_and_import_jobs",
+    sql: `
+      CREATE TABLE IF NOT EXISTS tags (
+        id TEXT PRIMARY KEY,
+        workspace_id TEXT NOT NULL REFERENCES workspaces(id),
+        name TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        UNIQUE(workspace_id, name)
+      );
+
+      CREATE TABLE IF NOT EXISTS bookmark_tags (
+        bookmark_id TEXT NOT NULL REFERENCES bookmarks(id) ON DELETE CASCADE,
+        tag_id TEXT NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
+        PRIMARY KEY (bookmark_id, tag_id)
+      );
+
+      CREATE TABLE IF NOT EXISTS import_jobs (
+        id TEXT PRIMARY KEY,
+        workspace_id TEXT NOT NULL REFERENCES workspaces(id),
+        user_id TEXT NOT NULL REFERENCES users(id),
+        source_type TEXT NOT NULL,
+        imported_count INTEGER NOT NULL DEFAULT 0,
+        skipped_count INTEGER NOT NULL DEFAULT 0,
+        report_json TEXT NOT NULL DEFAULT '{}',
+        created_at TEXT NOT NULL
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_tags_workspace_id ON tags(workspace_id);
+      CREATE INDEX IF NOT EXISTS idx_bookmark_tags_tag_id ON bookmark_tags(tag_id);
+      CREATE INDEX IF NOT EXISTS idx_bookmarks_status ON bookmarks(workspace_id, status);
+      CREATE INDEX IF NOT EXISTS idx_import_jobs_workspace_id ON import_jobs(workspace_id);
+    `
   }
 ];
 
