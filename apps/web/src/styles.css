@@ -108,9 +108,20 @@ nav {
 
 nav a {
   border-radius: 6px;
+  border: 0;
+  background: transparent;
   color: #cbd5e1;
+  cursor: pointer;
   padding: 10px 12px;
+  text-align: left;
   text-decoration: none;
+}
+
+nav a:hover,
+nav a:focus-visible {
+  background: #172033;
+  color: #fff;
+  outline: none;
 }
 
 nav a.active {
@@ -172,7 +183,9 @@ header h1 {
 }
 
 .tool-panel,
-.list-panel {
+.list-panel,
+.placeholder-panel,
+.view-heading {
   display: grid;
   gap: 14px;
   margin-top: 18px;
@@ -183,13 +196,17 @@ header h1 {
 }
 
 .tool-panel h2,
-.list-panel h2 {
+.list-panel h2,
+.placeholder-panel h2,
+.view-heading h2 {
   margin: 0 0 6px;
   font-size: 18px;
 }
 
 .tool-panel p,
-.list-panel p {
+.list-panel p,
+.placeholder-panel p,
+.view-heading p {
   margin: 0;
   color: #64748b;
 }
@@ -212,6 +229,22 @@ header h1 {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
+}
+
+.view-heading {
+  grid-template-columns: 32px minmax(0, 1fr);
+  align-items: start;
+  margin-top: 0;
+}
+
+.placeholder-panel {
+  min-height: 220px;
+  align-content: start;
+}
+
+.placeholder-panel svg,
+.view-heading svg {
+  color: #0f766e;
 }
 
 .subtle {

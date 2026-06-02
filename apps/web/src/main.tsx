@@ -1,6 +1,16 @@
 import { StrictMode, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { Bookmark, ExternalLink, LogOut, RefreshCw, Server, ShieldCheck } from "lucide-react";
+import {
+  Bookmark,
+  ExternalLink,
+  FolderKanban,
+  LogOut,
+  RefreshCw,
+  Server,
+  Settings,
+  ShieldCheck,
+  Upload
+} from "lucide-react";
 import "./styles.css";
 
 type User = {
@@ -11,6 +21,8 @@ type User = {
 };
 
 type AuthMode = "loading" | "setup" | "login" | "ready";
+type AppView = "overview" | "library" | "collections" | "importExport" | "settings";
+const appViews = new Set<AppView>(["overview", "library", "collections", "importExport", "settings"]);
 
 type BookmarkRow = {
   id: string;
@@ -42,6 +54,7 @@ async function api<T>(path: string, init?: RequestInit): Promise<T> {
 
 function App() {
   const [mode, setMode] = useState<AuthMode>("loading");
+  const [activeView, setActiveView] = useState<AppView>(getViewFromHash);
   const [user, setUser] = useState<User | null>(null);
   const [bookmarks, setBookmarks] = useState<BookmarkRow[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -69,6 +82,15 @@ function App() {
       setError(reason instanceof Error ? reason.message : "启动失败");
       setMode("login");
     });
+  }, []);
+
+  useEffect(() => {
+    function syncViewFromHash() {
+      setActiveView(getViewFromHash());
+    }
+
+    window.addEventListener("hashchange", syncViewFromHash);
+    return () => window.removeEventListener("hashchange", syncViewFromHash);
   }, []);
 
   async function submitAuth(event: React.FormEvent<HTMLFormElement>) {
@@ -153,11 +175,21 @@ function App() {
           <strong>Link Steward</strong>
         </div>
         <nav>
-          <a className="active">概览</a>
-          <a>个人库</a>
-          <a>共享 Collection</a>
-          <a>导入 / 导出</a>
-          <a>设置</a>
+          <NavLink active={activeView === "overview"} view="overview" onSelect={setActiveView}>
+            概览
+          </NavLink>
+          <NavLink active={activeView === "library"} view="library" onSelect={setActiveView}>
+            个人库
+          </NavLink>
+          <NavLink active={activeView === "collections"} view="collections" onSelect={setActiveView}>
+            共享 Collection
+          </NavLink>
+          <NavLink active={activeView === "importExport"} view="importExport" onSelect={setActiveView}>
+            导入 / 导出
+          </NavLink>
+          <NavLink active={activeView === "settings"} view="settings" onSelect={setActiveView}>
+            设置
+          </NavLink>
         </nav>
       </aside>
       <section className="content">
@@ -170,61 +202,174 @@ function App() {
             <LogOut size={18} />
           </button>
         </header>
-        <div className="metric-grid">
-          <article>
-            <Server size={20} />
-            <span>服务端</span>
-            <strong>已连接</strong>
-          </article>
-          <article>
-            <ShieldCheck size={20} />
-            <span>Owner 初始化</span>
-            <strong>完成</strong>
-          </article>
-          <article>
-            <Bookmark size={20} />
-            <span>已保存书签</span>
-            <strong>{bookmarks.length}</strong>
-          </article>
-        </div>
-        <section className="tool-panel">
-          <div>
-            <h2>浏览器扩展</h2>
-            <p>生成 token 后，在扩展设置页填写服务端地址和 API token。</p>
-          </div>
-          <button onClick={createExtensionToken}>生成扩展 token</button>
-          {extensionToken ? <code>{extensionToken}</code> : null}
-        </section>
-        <section className="list-panel">
-          <div className="section-header">
-            <div>
-              <h2>最近书签</h2>
-              <p>扩展保存成功后会出现在这里。</p>
-            </div>
-            <button className="icon-button subtle" onClick={loadBookmarks} aria-label="刷新书签">
-              <RefreshCw size={17} />
-            </button>
-          </div>
-          {bookmarks.length === 0 ? (
-            <p className="empty">暂无书签</p>
-          ) : (
-            <ul className="bookmark-list">
-              {bookmarks.map((bookmark) => (
-                <li key={bookmark.id}>
-                  <div>
-                    <strong>{bookmark.title}</strong>
-                    <span>{bookmark.domain} · {bookmark.collectionName}</span>
-                  </div>
-                  <a href={bookmark.url} target="_blank" rel="noreferrer" aria-label={`打开 ${bookmark.title}`}>
-                    <ExternalLink size={17} />
-                  </a>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
+        {activeView === "overview" ? (
+          <OverviewView
+            bookmarks={bookmarks}
+            extensionToken={extensionToken}
+            createExtensionToken={createExtensionToken}
+            loadBookmarks={loadBookmarks}
+          />
+        ) : null}
+        {activeView === "library" ? <LibraryView bookmarks={bookmarks} loadBookmarks={loadBookmarks} /> : null}
+        {activeView === "collections" ? <CollectionsView /> : null}
+        {activeView === "importExport" ? <ImportExportView /> : null}
+        {activeView === "settings" ? <SettingsView user={user} /> : null}
       </section>
     </main>
+  );
+}
+
+function getViewFromHash(): AppView {
+  const view = window.location.hash.replace(/^#/, "");
+  return appViews.has(view as AppView) ? (view as AppView) : "overview";
+}
+
+function NavLink({
+  active,
+  children,
+  onSelect,
+  view
+}: {
+  active: boolean;
+  children: React.ReactNode;
+  onSelect: (view: AppView) => void;
+  view: AppView;
+}) {
+  return (
+    <a className={active ? "active" : ""} href={`#${view}`} onClick={() => onSelect(view)}>
+      {children}
+    </a>
+  );
+}
+
+function OverviewView({
+  bookmarks,
+  extensionToken,
+  createExtensionToken,
+  loadBookmarks
+}: {
+  bookmarks: BookmarkRow[];
+  extensionToken: string | null;
+  createExtensionToken: () => Promise<void>;
+  loadBookmarks: () => Promise<void>;
+}) {
+  return (
+    <>
+      <div className="metric-grid">
+        <article>
+          <Server size={20} />
+          <span>服务端</span>
+          <strong>已连接</strong>
+        </article>
+        <article>
+          <ShieldCheck size={20} />
+          <span>Owner 初始化</span>
+          <strong>完成</strong>
+        </article>
+        <article>
+          <Bookmark size={20} />
+          <span>已保存书签</span>
+          <strong>{bookmarks.length}</strong>
+        </article>
+      </div>
+      <section className="tool-panel">
+        <div>
+          <h2>浏览器扩展</h2>
+          <p>生成 token 后，在扩展设置页填写服务端地址和 API token。</p>
+        </div>
+        <button onClick={createExtensionToken}>生成扩展 token</button>
+        {extensionToken ? <code>{extensionToken}</code> : null}
+      </section>
+      <BookmarkList title="最近书签" description="扩展保存成功后会出现在这里。" bookmarks={bookmarks} onRefresh={loadBookmarks} />
+    </>
+  );
+}
+
+function LibraryView({ bookmarks, loadBookmarks }: { bookmarks: BookmarkRow[]; loadBookmarks: () => Promise<void> }) {
+  return (
+    <>
+      <section className="view-heading">
+        <Bookmark size={22} />
+        <div>
+          <h2>个人库</h2>
+          <p>集中查看当前账号保存到 Personal Library 的书签。</p>
+        </div>
+      </section>
+      <BookmarkList title="全部书签" description="当前版本展示最近 100 条书签。" bookmarks={bookmarks} onRefresh={loadBookmarks} />
+    </>
+  );
+}
+
+function CollectionsView() {
+  return (
+    <section className="placeholder-panel">
+      <FolderKanban size={24} />
+      <h2>共享 Collection</h2>
+      <p>这里会承载家庭或团队共享资料库。下一步会接入 collection 创建、移动书签和权限设置。</p>
+    </section>
+  );
+}
+
+function ImportExportView() {
+  return (
+    <section className="placeholder-panel">
+      <Upload size={24} />
+      <h2>导入 / 导出</h2>
+      <p>这里会放 HTML bookmarks、JSON、Markdown 和 OneNav 导入导出入口。</p>
+    </section>
+  );
+}
+
+function SettingsView({ user }: { user: User | null }) {
+  return (
+    <section className="placeholder-panel">
+      <Settings size={24} />
+      <h2>设置</h2>
+      <p>{user ? `${user.email} · ${user.role}` : "当前账号设置"}</p>
+    </section>
+  );
+}
+
+function BookmarkList({
+  title,
+  description,
+  bookmarks,
+  onRefresh
+}: {
+  title: string;
+  description: string;
+  bookmarks: BookmarkRow[];
+  onRefresh: () => Promise<void>;
+}) {
+  return (
+    <section className="list-panel">
+      <div className="section-header">
+        <div>
+          <h2>{title}</h2>
+          <p>{description}</p>
+        </div>
+        <button className="icon-button subtle" onClick={onRefresh} aria-label="刷新书签">
+          <RefreshCw size={17} />
+        </button>
+      </div>
+      {bookmarks.length === 0 ? (
+        <p className="empty">暂无书签</p>
+      ) : (
+        <ul className="bookmark-list">
+          {bookmarks.map((bookmark) => (
+            <li key={bookmark.id}>
+              <div>
+                <strong>{bookmark.title}</strong>
+                <span>{bookmark.domain} · {bookmark.collectionName}</span>
+              </div>
+              <a href={bookmark.url} target="_blank" rel="noreferrer" aria-label={`打开 ${bookmark.title}`}>
+                <ExternalLink size={17} />
+              </a>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }
 
