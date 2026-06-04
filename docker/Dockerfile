@@ -14,6 +14,7 @@ COPY docker/entrypoint.sh /usr/local/bin/link-steward-entrypoint
 
 RUN chmod +x /usr/local/bin/link-steward-entrypoint \
   && rm -rf /var/www/html/docker /var/www/html/unraid /var/www/html/.dockerignore /var/www/html/.gitignore /var/www/html/AGENTS.md \
+  && mkdir -p /var/www/html/data /var/www/html/class/cache \
   && chown -R www-data:www-data /var/www/html/data /var/www/html/class/cache
 
 VOLUME ["/var/www/html/data"]
