@@ -1,10 +1,9 @@
-node_modules/
-dist/
-*.tsbuildinfo
-.env
-.env.local
-data/
-coverage/
+class/cache
+data/config.php
+data/onenav.db3
 .DS_Store
-npm-debug.log*
 agent.md
+node_modules
+data/backup
+data/upload
+data/templates

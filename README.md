@@ -1,6 +1,18 @@
-# link-steward
+# Link Steward OneNav Fork
 
-Link Steward is a self-hosted bookmark steward for Unraid, browser extensions, shared collections, and local browser bookmark double-write.
+Link Steward is now a fork of [OneNav](https://github.com/helloxz/onenav), packaged for this repository's GHCR and Unraid workflow.
+
+OneNav is a PHP + SQLite bookmark/navigation manager with a dense admin UI, category management, link management, bookmark import, themes, and API support.
+
+## License And Attribution
+
+This fork is based on OneNav `v1.2.4-20260507`, licensed under Apache License 2.0.
+
+- Upstream: <https://github.com/helloxz/onenav>
+- License: [Apache License 2.0](./LICENSE)
+- Fork notice: [FORK_NOTICE.md](./FORK_NOTICE.md)
+
+Keep upstream license and copyright notices when redistributing modified builds.
 
 ## Docker Image
 
@@ -8,28 +20,7 @@ Link Steward is a self-hosted bookmark steward for Unraid, browser extensions, s
 ghcr.io/robs87/link-steward:latest
 ```
 
-The container serves both:
-
-- Web UI: `http://SERVER_IP:3088/`
-- Health check: `http://SERVER_IP:3088/api/health`
-
-## Usable Features
-
-- Owner setup and cookie login.
-- Chrome / Edge extension token management.
-- Extension save flow: server first, then local browser bookmark write to `Link Steward/Inbox`.
-- Web bookmark management:
-  - search by title, URL, domain, description, or tag;
-  - edit title, description, tags, and folder;
-  - archive bookmarks;
-  - create and update folders.
-- Extension popup:
-  - choose the server folder before saving the current tab;
-  - write the local browser copy under `Link Steward/<folder>`;
-  - search server bookmarks directly from the extension.
-- Browser bookmarks HTML import.
-- HTML, JSON, and Markdown export.
-- SQLite persistence under `/data` in Docker / Unraid.
+The container serves OneNav on container port `80`.
 
 ## Docker Compose
 
@@ -38,15 +29,13 @@ LINK_STEWARD_HOST_DATA_DIR=/mnt/user/appdata/link-steward \
 docker compose -f docker/docker-compose.yml up -d
 ```
 
-Then open `http://SERVER_IP:3088/`, create the Owner account, generate an extension token in `设置`, and load `apps/extension` as an unpacked Chrome / Edge extension during local testing.
-
-The Docker image also serves the current extension package:
+Then open:
 
 ```text
-http://SERVER_IP:3088/link-steward-extension.zip
+http://SERVER_IP:3088/
 ```
 
-Download and unzip it, then load the unzipped folder in Chrome / Edge developer mode. When you update the Unraid container image, download this zip again and reload the browser extension.
+On first launch, OneNav will initialize `data/config.php` and `data/onenav.db3` inside the mounted appdata directory.
 
 ## Unraid
 
@@ -56,15 +45,31 @@ Use the template at:
 https://raw.githubusercontent.com/Robs87/link-steward/main/unraid/link-steward.xml
 ```
 
-The Unraid template maps:
+Template mapping:
 
-- container port `3088` to host port `3088`
-- `/data` to `/mnt/user/appdata/link-steward`
-- `LINK_STEWARD_COOKIE_SECRET` for signed login cookies
+- Host port `3088` -> container port `80`
+- `/mnt/user/appdata/link-steward` -> `/var/www/html/data`
 
-## Docs
+## Runtime Data
 
-- [产品定义文档](./产品定义文档.md)
-- [开发计划](./开发计划.md)
-- [Development](./docs/development.md)
-- [Manual QA](./docs/manual-qa.md)
+These paths are runtime state and are ignored by git:
+
+- `data/config.php`
+- `data/onenav.db3`
+- `data/backup/`
+- `data/upload/`
+- `data/templates/`
+
+Back up the Unraid appdata directory to preserve your bookmarks and settings.
+
+## Upstream OneNav Features
+
+- Category management
+- Link management
+- Public/private links
+- Chrome / Firefox / Edge bookmark import
+- Multiple themes
+- API support
+- Link drag sorting
+- Frontend edit support in supported themes
+- SQLite backup and restore
