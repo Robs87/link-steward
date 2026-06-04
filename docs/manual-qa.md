@@ -43,6 +43,18 @@ Expected:
 - Web UI lists the extension device.
 - Extension options shows `连接成功`.
 
+## Extension Package From Docker
+
+1. Update and start the Docker / Unraid container.
+2. Open `http://SERVER_IP:3088/link-steward-extension.zip`.
+3. Unzip the file.
+4. Load the unzipped folder as an unpacked extension in Chrome / Edge developer mode.
+
+Expected:
+
+- The popup contains `保存到文件夹`.
+- The popup contains `搜索书签`.
+
 ## Extension Token Revocation
 
 1. In Web UI `设置`, revoke an active extension device.

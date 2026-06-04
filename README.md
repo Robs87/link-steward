@@ -40,6 +40,14 @@ docker compose -f docker/docker-compose.yml up -d
 
 Then open `http://SERVER_IP:3088/`, create the Owner account, generate an extension token in `设置`, and load `apps/extension` as an unpacked Chrome / Edge extension during local testing.
 
+The Docker image also serves the current extension package:
+
+```text
+http://SERVER_IP:3088/link-steward-extension.zip
+```
+
+Download and unzip it, then load the unzipped folder in Chrome / Edge developer mode. When you update the Unraid container image, download this zip again and reload the browser extension.
+
 ## Unraid
 
 Use the template at:
