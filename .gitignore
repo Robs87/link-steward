@@ -4,6 +4,7 @@ data/onenav.db3
 .DS_Store
 agent.md
 node_modules
+dist
 data/backup
 data/upload
 data/templates

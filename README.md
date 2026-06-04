@@ -50,6 +50,21 @@ Template mapping:
 - Host port `3088` -> container port `80`
 - `/mnt/user/appdata/link-steward` -> `/var/www/html/data`
 
+## Browser Extension
+
+Extension source:
+
+```text
+apps/extension
+```
+
+Load it as an unpacked Chrome / Edge extension, then configure the OneNav API
+domain and token in the extension settings. To build a zip archive locally:
+
+```bash
+node scripts/build-extension-zip.mjs
+```
+
 ## Runtime Data
 
 These paths are runtime state and are ignored by git:

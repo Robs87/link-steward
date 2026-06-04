@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "Link Steward OneNav",
+  "version": "0.2.0",
+  "description": "Search and save bookmarks to a self-hosted OneNav instance.",
+  "permissions": ["contextMenus", "storage", "tabs"],
+  "host_permissions": ["http://*/*", "https://*/*"],
+  "background": {
+    "service_worker": "src/background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_title": "Link Steward OneNav",
+    "default_popup": "src/popup.html"
+  },
+  "options_page": "src/popup.html"
+}

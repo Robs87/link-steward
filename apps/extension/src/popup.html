@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Link Steward OneNav</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <section class="view is-active" data-view="home">
+        <header class="search-header">
+          <label class="search-box">
+            <span>⌕</span>
+            <input id="searchInput" type="search" placeholder="输入书签关键词进行搜索" />
+          </label>
+        </header>
+        <div class="panel list-panel">
+          <div id="categoryList" class="category-list"></div>
+          <div id="linkList" class="link-list is-hidden"></div>
+        </div>
+        <div class="float-actions">
+          <button id="scrollTop" type="button" title="回到顶部">⌃</button>
+          <button id="refreshHome" type="button" title="刷新">↻</button>
+        </div>
+      </section>
+
+      <section class="view" data-view="add">
+        <header class="title-header">添加链接</header>
+        <form id="addForm" class="panel form-panel">
+          <label>
+            <span>URL</span>
+            <input id="urlInput" name="url" type="url" required />
+          </label>
+          <label>
+            <span>链接名称</span>
+            <input id="titleInput" name="title" type="text" required />
+          </label>
+          <label>
+            <span>链接描述</span>
+            <textarea id="descriptionInput" name="description" placeholder="请输入链接描述，非必填"></textarea>
+          </label>
+          <label>
+            <span>所属分类</span>
+            <select id="categorySelect" name="category"></select>
+          </label>
+          <div class="button-row">
+            <button class="primary" type="submit" data-private="true">添加为私有</button>
+            <button class="primary" type="submit" data-private="false">添加为公有</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="view" data-view="recommend">
+        <header class="title-header">推荐</header>
+        <div class="panel empty-panel">
+          <strong>最近添加</strong>
+          <div id="recentLinks" class="link-list"></div>
+        </div>
+      </section>
+
+      <section class="view" data-view="settings">
+        <header class="title-header">设置</header>
+        <form id="settingsForm" class="panel form-panel">
+          <h1>API设置</h1>
+          <div class="notice">
+            <strong>提示</strong>
+            <p>1. API域名末尾不需要加 “/”</p>
+            <p>2. 请在“OneNav后台 - 系统设置 - 获取API”计算Token</p>
+            <p>3. 您可以先点测试按钮确保API信息正确</p>
+          </div>
+          <label>
+            <span><b>*</b> API域名</span>
+            <input id="apiBaseInput" type="url" placeholder="http://192.168.31.190:3088" required />
+          </label>
+          <label>
+            <span><b>*</b> API Token</span>
+            <div class="token-field">
+              <input id="apiTokenInput" type="password" required />
+              <button id="toggleToken" type="button" title="显示/隐藏">◎</button>
+            </div>
+          </label>
+          <div class="button-row settings-actions">
+            <button id="pasteSettings" class="primary" type="button">一键粘贴</button>
+            <button id="testSettings" class="primary" type="button">测试</button>
+            <button class="primary" type="submit">保存</button>
+            <button id="resetSettings" class="secondary" type="button">重置</button>
+          </div>
+        </form>
+      </section>
+    </main>
+
+    <nav class="tabbar">
+      <button class="is-active" type="button" data-tab="home"><span>⌂</span>首页</button>
+      <button type="button" data-tab="add"><span>＋</span>添加链接</button>
+      <button type="button" data-tab="recommend"><span>☆</span>推荐</button>
+      <button type="button" data-tab="settings"><span>⚙</span>设置</button>
+    </nav>
+
+    <div id="toast" class="toast"></div>
+    <script type="module" src="./popup.js"></script>
+  </body>
+</html>
