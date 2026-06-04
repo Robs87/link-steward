@@ -241,7 +241,7 @@ function App() {
       method: "POST",
       body: JSON.stringify(input)
     });
-    setNotice("Collection 已创建");
+    setNotice("文件夹已创建");
     await loadCollections();
   }
 
@@ -253,7 +253,7 @@ function App() {
       method: "PATCH",
       body: JSON.stringify(input)
     });
-    setNotice(input.archived ? "Collection 已归档" : "Collection 已更新");
+    setNotice(input.archived ? "文件夹已归档" : "文件夹已更新");
     await Promise.all([loadBookmarks(), loadCollections()]);
   }
 
@@ -310,7 +310,7 @@ function App() {
             个人库
           </NavLink>
           <NavLink active={activeView === "collections"} view="collections" onSelect={setActiveView}>
-            Collection
+            文件夹
           </NavLink>
           <NavLink active={activeView === "importExport"} view="importExport" onSelect={setActiveView}>
             导入 / 导出
@@ -433,7 +433,7 @@ function OverviewView({
         </article>
         <article>
           <FolderKanban size={20} />
-          <span>Collection</span>
+          <span>文件夹</span>
           <strong>{activeCollections}</strong>
         </article>
         <article>
@@ -494,7 +494,7 @@ function LibraryView({
         <Bookmark size={22} />
         <div>
           <h2>个人库</h2>
-          <p>搜索、编辑、移动、打标签和归档书签。</p>
+          <p>搜索、编辑、移动到文件夹、打标签和归档书签。</p>
         </div>
       </section>
       <form className="filter-bar" onSubmit={submitFilters}>
@@ -510,7 +510,7 @@ function LibraryView({
           </div>
         </label>
         <label>
-          Collection
+          文件夹
           <select
             value={filters.collectionId}
             onChange={(event) => setFilters({ ...filters, collectionId: event.target.value })}
@@ -581,8 +581,8 @@ function CollectionsView({
       <section className="view-heading">
         <FolderKanban size={22} />
         <div>
-          <h2>Collection</h2>
-          <p>创建共享或私有资料夹，并把书签移动进去。</p>
+          <h2>文件夹</h2>
+          <p>创建共享或私有文件夹，并把书签移动进去。</p>
         </div>
       </section>
       <section className="tool-panel">
@@ -607,8 +607,8 @@ function CollectionsView({
       <section className="list-panel">
         <div className="section-header">
           <div>
-            <h2>现有 Collection</h2>
-            <p>Personal Library 不能归档，其它 collection 可按需归档。</p>
+            <h2>现有文件夹</h2>
+            <p>Personal Library 不能归档，其它文件夹可按需归档。</p>
           </div>
         </div>
         <ul className="collection-list">
@@ -703,7 +703,7 @@ function ImportExportView({
       <section className="tool-panel">
         <form onSubmit={submit}>
           <label>
-            目标 Collection
+            目标文件夹
             <select value={collectionId} onChange={(event) => setCollectionId(event.target.value)}>
               <option value="">Personal Library</option>
               {collections
@@ -734,7 +734,7 @@ function ImportExportView({
         <div className="section-header">
           <div>
             <h2>导出</h2>
-            <p>选择上方 Collection 可导出单个资料夹，不选则导出全部活跃书签。</p>
+            <p>选择上方文件夹可导出单个文件夹，不选则导出全部活跃书签。</p>
           </div>
         </div>
         <div className="export-actions">
@@ -968,7 +968,7 @@ function BookmarkEditor({
         />
       </div>
       <div className="bookmark-edit-meta">
-        <select value={collectionId} onChange={(event) => setCollectionId(event.target.value)} aria-label="Collection">
+        <select value={collectionId} onChange={(event) => setCollectionId(event.target.value)} aria-label="文件夹">
           {activeCollections.map((collection) => (
             <option key={collection.id} value={collection.id}>
               {collection.name}

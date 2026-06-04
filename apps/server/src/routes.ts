@@ -260,7 +260,7 @@ export async function registerRoutes(app: FastifyInstance, db: DatabaseSync, con
   });
 
   app.get("/api/collections", async (request, reply) => {
-    const user = getSessionUser(db, request.cookies[sessionCookieName]);
+    const user = getUserFromRequest(db, request.cookies[sessionCookieName], request.headers.authorization);
     if (!user) {
       return reply.code(401).send({ error: "UNAUTHENTICATED" });
     }

@@ -63,13 +63,27 @@ Expected: extension options shows `连接成功`.
 
 1. Open any normal web page.
 2. Open the Link Steward extension popup.
-3. Click `保存当前标签页`.
+3. Select a folder in `保存到文件夹`.
+4. Click `保存当前标签页`.
 
 Expected:
 
-- Popup says `已保存到服务端和本地书签`.
-- Browser bookmarks contain `Link Steward/Inbox`.
+- Popup says the page was saved to `Link Steward/<folder>`.
+- Browser bookmarks contain `Link Steward/<folder>`.
 - Web dashboard recent bookmarks shows the saved page after refresh.
+
+## Extension Search
+
+1. Open the Link Steward extension popup.
+2. Enter a title, domain, URL, or tag in `搜索书签`.
+3. Click `搜索`.
+4. Click a result.
+
+Expected:
+
+- Matching server bookmarks appear in the popup.
+- Result metadata shows domain, folder, and tags when available.
+- Clicking a result opens the bookmark URL.
 
 ## Duplicate Save
 
@@ -86,13 +100,13 @@ Expected:
 2. Search by a saved page title, domain, or tag.
 3. Edit the bookmark title and description.
 4. Add comma-separated tags.
-5. Move the bookmark to another collection.
+5. Move the bookmark to another folder.
 6. Save the row.
 
 Expected:
 
 - Search returns the expected bookmark.
-- The edited title, description, tags, and collection persist after refresh.
+- The edited title, description, tags, and folder persist after refresh.
 
 Archive:
 
@@ -102,24 +116,24 @@ Archive:
 
 Expected: the archived bookmark appears only under the archived/all status filters.
 
-## Collection Management
+## Folder Management
 
-1. Open Web UI `Collection`.
-2. Create a workspace collection.
+1. Open Web UI `文件夹`.
+2. Create a workspace folder.
 3. Rename it and save.
 4. Archive it.
 
 Expected:
 
-- The collection appears in the list with bookmark count.
-- Archived collections disappear from active bookmark move/import selectors.
+- The folder appears in the list with bookmark count.
+- Archived folders disappear from active bookmark move/import selectors.
 
 ## Import / Export
 
 HTML import:
 
 1. Open Web UI `导入 / 导出`.
-2. Select a target collection.
+2. Select a target folder.
 3. Upload or paste a Chrome / Edge bookmarks HTML export.
 4. Click `导入 HTML`.
 
@@ -131,14 +145,14 @@ Expected:
 Export:
 
 1. Open Web UI `导入 / 导出`.
-2. Optionally select a collection.
+2. Optionally select a folder.
 3. Click `HTML`, `JSON`, and `Markdown`.
 
 Expected:
 
 - HTML export contains a Netscape bookmark file structure and can be imported by browsers.
-- JSON export includes bookmark metadata, tags, and collection names.
-- Markdown export groups links by collection.
+- JSON export includes bookmark metadata, tags, and folder names.
+- Markdown export groups links by folder.
 
 ## Context Menu Save
 

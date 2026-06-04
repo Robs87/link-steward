@@ -20,9 +20,13 @@ The container serves both:
 - Extension save flow: server first, then local browser bookmark write to `Link Steward/Inbox`.
 - Web bookmark management:
   - search by title, URL, domain, description, or tag;
-  - edit title, description, tags, and collection;
+  - edit title, description, tags, and folder;
   - archive bookmarks;
-  - create and update collections.
+  - create and update folders.
+- Extension popup:
+  - choose the server folder before saving the current tab;
+  - write the local browser copy under `Link Steward/<folder>`;
+  - search server bookmarks directly from the extension.
 - Browser bookmarks HTML import.
 - HTML, JSON, and Markdown export.
 - SQLite persistence under `/data` in Docker / Unraid.
