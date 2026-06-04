@@ -300,83 +300,97 @@ function App() {
       <aside>
         <div className="brand compact">
           <Bookmark size={22} />
-          <strong>Link Steward</strong>
+          <strong>Link Steward管理</strong>
         </div>
         <nav>
-          <NavLink active={activeView === "overview"} view="overview" onSelect={setActiveView}>
-            概览
-          </NavLink>
-          <NavLink active={activeView === "library"} view="library" onSelect={setActiveView}>
-            个人库
-          </NavLink>
-          <NavLink active={activeView === "collections"} view="collections" onSelect={setActiveView}>
-            文件夹
-          </NavLink>
-          <NavLink active={activeView === "importExport"} view="importExport" onSelect={setActiveView}>
-            导入 / 导出
-          </NavLink>
-          <NavLink active={activeView === "settings"} view="settings" onSelect={setActiveView}>
-            设置
-          </NavLink>
+          <div className="nav-group">
+            <p>链接管理</p>
+            <NavLink active={activeView === "overview"} view="overview" onSelect={setActiveView}>
+              后台首页
+            </NavLink>
+            <NavLink active={activeView === "library"} view="library" onSelect={setActiveView}>
+              我的链接
+            </NavLink>
+            <NavLink active={activeView === "importExport"} view="importExport" onSelect={setActiveView}>
+              书签导入
+            </NavLink>
+          </div>
+          <div className="nav-group">
+            <p>分类管理</p>
+            <NavLink active={activeView === "collections"} view="collections" onSelect={setActiveView}>
+              分类列表
+            </NavLink>
+          </div>
+          <div className="nav-group">
+            <p>系统设置</p>
+            <NavLink active={activeView === "settings"} view="settings" onSelect={setActiveView}>
+              扩展设置
+            </NavLink>
+          </div>
         </nav>
       </aside>
-      <section className="content">
-        <header>
+      <section className="workspace">
+        <header className="topbar">
           <div>
-            <p>Owner</p>
-            <h1>{user?.displayName}</h1>
+            <p>前台首页</p>
+            <h1>Link Steward 后台</h1>
           </div>
-          <button className="icon-button" onClick={logout} aria-label="退出登录">
-            <LogOut size={18} />
-          </button>
+          <div className="topbar-account">
+            <span>{user?.displayName}</span>
+            <button className="icon-button" onClick={logout} aria-label="退出登录">
+              <LogOut size={18} />
+            </button>
+          </div>
         </header>
-        {notice ? (
-          <div className="notice" role="status">
-            {notice}
-            <button onClick={() => setNotice(null)}>关闭</button>
-          </div>
-        ) : null}
-        {activeView === "overview" ? (
-          <OverviewView
-            bookmarks={bookmarks}
-            collections={collections}
-            extensionDevices={extensionDevices}
-            extensionToken={extensionToken}
-            createExtensionToken={createExtensionToken}
-            loadWorkspace={loadWorkspace}
-          />
-        ) : null}
-        {activeView === "library" ? (
-          <LibraryView
-            bookmarks={bookmarks}
-            collections={collections}
-            filters={filters}
-            setFilters={setFilters}
-            loadBookmarks={loadBookmarks}
-            saveBookmark={saveBookmark}
-            archiveBookmark={archiveBookmark}
-          />
-        ) : null}
-        {activeView === "collections" ? (
-          <CollectionsView
-            collections={collections}
-            createCollection={createCollection}
-            updateCollection={updateCollection}
-          />
-        ) : null}
-        {activeView === "importExport" ? (
-          <ImportExportView collections={collections} importHtml={importHtml} />
-        ) : null}
-        {activeView === "settings" ? (
-          <SettingsView
-            user={user}
-            extensionDevices={extensionDevices}
-            extensionToken={extensionToken}
-            createExtensionToken={createExtensionToken}
-            revokeDevice={revokeDevice}
-            clearExtensionToken={() => setExtensionToken(null)}
-          />
-        ) : null}
+        <section className="content">
+          {notice ? (
+            <div className="notice" role="status">
+              {notice}
+              <button onClick={() => setNotice(null)}>关闭</button>
+            </div>
+          ) : null}
+          {activeView === "overview" ? (
+            <OverviewView
+              bookmarks={bookmarks}
+              collections={collections}
+              extensionDevices={extensionDevices}
+              extensionToken={extensionToken}
+              createExtensionToken={createExtensionToken}
+              loadWorkspace={loadWorkspace}
+            />
+          ) : null}
+          {activeView === "library" ? (
+            <LibraryView
+              bookmarks={bookmarks}
+              collections={collections}
+              filters={filters}
+              setFilters={setFilters}
+              loadBookmarks={loadBookmarks}
+              saveBookmark={saveBookmark}
+              archiveBookmark={archiveBookmark}
+            />
+          ) : null}
+          {activeView === "collections" ? (
+            <CollectionsView
+              collections={collections}
+              createCollection={createCollection}
+              updateCollection={updateCollection}
+            />
+          ) : null}
+          {activeView === "importExport" ? (
+            <ImportExportView collections={collections} importHtml={importHtml} />
+          ) : null}
+          {activeView === "settings" ? (
+            <SettingsView
+              user={user}
+              extensionDevices={extensionDevices}
+              extensionToken={extensionToken}
+              createExtensionToken={createExtensionToken}
+              revokeDevice={revokeDevice}
+              clearExtensionToken={() => setExtensionToken(null)}
+            />
+          ) : null}
+        </section>
       </section>
     </main>
   );
@@ -612,6 +626,10 @@ function CollectionsView({
           </div>
         </div>
         <ul className="collection-list">
+          <li className="table-head">
+            <span>分类名称</span>
+            <span>编辑</span>
+          </li>
           {collections.map((collection) => (
             <CollectionItem key={collection.id} collection={collection} updateCollection={updateCollection} />
           ))}
@@ -905,6 +923,12 @@ function BookmarkList({
         <p className="empty">暂无书签</p>
       ) : (
         <ul className={editable ? "bookmark-editor-list" : "bookmark-list"}>
+          {editable ? (
+            <li className="table-head">
+              <span>链接信息</span>
+              <span>分类 / 标签 / 操作</span>
+            </li>
+          ) : null}
           {bookmarks.map((bookmark) =>
             editable && saveBookmark && archiveBookmark ? (
               <BookmarkEditor

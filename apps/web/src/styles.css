@@ -1,6 +1,6 @@
 :root {
-  color: #1f2933;
-  background: #f6f8fb;
+  color: #4a4f55;
+  background: #f3f3f3;
   font-family:
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
@@ -69,8 +69,8 @@ select,
 textarea {
   width: 100%;
   border: 1px solid #cbd5e1;
-  border-radius: 6px;
-  padding: 11px 12px;
+  border-radius: 2px;
+  padding: 8px 10px;
   background: #fff;
 }
 
@@ -84,8 +84,8 @@ button {
   justify-content: center;
   gap: 8px;
   border: 0;
-  border-radius: 6px;
-  padding: 11px 14px;
+  border-radius: 2px;
+  padding: 8px 12px;
   color: #fff;
   background: #0f766e;
   cursor: pointer;
@@ -99,67 +99,96 @@ button {
 
 .app-shell {
   display: grid;
-  grid-template-columns: 260px 1fr;
+  grid-template-columns: 200px minmax(0, 1fr);
+  background: #f3f3f3;
 }
 
 aside {
-  background: #0f172a;
-  color: #e2e8f0;
-  padding: 22px;
+  background: #20272b;
+  color: #c7d0d6;
+  padding: 0;
 }
 
 .compact {
-  color: #f8fafc;
-  margin-bottom: 28px;
+  height: 60px;
+  padding: 0 18px;
+  color: #11b8a5;
+  background: #111719;
+  font-size: 20px;
+  white-space: nowrap;
 }
 
 nav {
   display: grid;
-  gap: 4px;
+  gap: 0;
 }
 
 nav a {
-  border-radius: 6px;
+  display: block;
+  border-radius: 0;
   border: 0;
   background: transparent;
-  color: #cbd5e1;
+  color: #c7d0d6;
   cursor: pointer;
-  padding: 10px 12px;
+  padding: 12px 20px;
   text-align: left;
   text-decoration: none;
 }
 
 nav a:hover,
 nav a:focus-visible {
-  background: #172033;
+  background: #263137;
   color: #fff;
   outline: none;
 }
 
 nav a.active {
-  background: #1e293b;
+  background: #20b9aa;
   color: #fff;
+}
+
+.nav-group p {
+  margin: 0;
+  padding: 14px 20px;
+  color: #fff;
+  background: #30383e;
+  font-weight: 700;
+}
+
+.workspace {
+  min-width: 0;
 }
 
 .content {
   padding: 28px;
 }
 
-header {
+.topbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 24px;
+  height: 60px;
+  margin-bottom: 0;
+  background: #252b2f;
+  padding: 0 28px;
+  color: #d9e0e4;
 }
 
-header p {
-  margin: 0 0 4px;
-  color: #64748b;
-}
-
-header h1 {
+.topbar p {
   margin: 0;
-  font-size: 28px;
+  color: #d9e0e4;
+}
+
+.topbar h1 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.topbar-account {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .icon-button {
@@ -173,17 +202,17 @@ header h1 {
 .metric-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 14px;
+  gap: 12px;
 }
 
 .metric-grid article {
   display: grid;
   gap: 8px;
-  min-height: 128px;
+  min-height: 96px;
   border: 1px solid #d8dee8;
-  border-radius: 8px;
+  border-radius: 0;
   background: #fff;
-  padding: 18px;
+  padding: 14px;
 }
 
 .metric-grid span {
@@ -191,7 +220,7 @@ header h1 {
 }
 
 .metric-grid strong {
-  font-size: 18px;
+  font-size: 20px;
 }
 
 .tool-panel,
@@ -201,10 +230,10 @@ header h1 {
   display: grid;
   gap: 14px;
   margin-top: 18px;
-  border: 1px solid #d8dee8;
-  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 0;
   background: #fff;
-  padding: 18px;
+  padding: 16px;
 }
 
 .tool-panel h2,
@@ -212,7 +241,7 @@ header h1 {
 .placeholder-panel h2,
 .view-heading h2 {
   margin: 0 0 6px;
-  font-size: 18px;
+  font-size: 16px;
 }
 
 .tool-panel p,
@@ -267,10 +296,11 @@ header h1 {
   gap: 14px;
   margin-bottom: 18px;
   border: 1px solid #99f6e4;
-  border-radius: 8px;
-  background: #f0fdfa;
+  border-radius: 0;
+  border-left: 3px solid #ff5722;
+  background: #fff7ed;
   padding: 12px 14px;
-  color: #0f766e;
+  color: #ff5722;
 }
 
 .notice button {
@@ -290,6 +320,7 @@ header h1 {
   grid-template-columns: 32px minmax(0, 1fr);
   align-items: start;
   margin-top: 0;
+  border-left: 3px solid #20b9aa;
 }
 
 .placeholder-panel {
@@ -303,18 +334,18 @@ header h1 {
 }
 
 .subtle {
-  color: #334155;
-  background: #e2e8f0;
+  color: #fff;
+  background: #20b9aa;
 }
 
 .danger {
   color: #fff;
-  background: #b42318;
+  background: #ff5722;
 }
 
 .empty {
   border: 1px dashed #cbd5e1;
-  border-radius: 8px;
+  border-radius: 0;
   padding: 18px;
   text-align: center;
 }
@@ -331,10 +362,12 @@ header h1 {
 .collection-list,
 .bookmark-editor-list {
   display: grid;
-  gap: 8px;
+  gap: 0;
   padding: 0;
   margin: 0;
   list-style: none;
+  border-top: 1px solid #e5e7eb;
+  border-left: 1px solid #e5e7eb;
 }
 
 .device-list li,
@@ -344,9 +377,25 @@ header h1 {
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 14px;
   align-items: center;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 14px;
+  border: 0;
+  border-right: 1px solid #e5e7eb;
+  border-bottom: 1px solid #e5e7eb;
+  border-radius: 0;
+  padding: 9px 12px;
+}
+
+.collection-list li.table-head,
+.bookmark-editor-list li.table-head {
+  background: #f7f7f7;
+  color: #555;
+  font-weight: 700;
+}
+
+.collection-list li.table-head span,
+.bookmark-editor-list li.table-head span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .device-list li.revoked,
@@ -376,9 +425,9 @@ header h1 {
   gap: 12px;
   margin-top: 18px;
   border: 1px solid #d8dee8;
-  border-radius: 8px;
+  border-radius: 0;
   background: #fff;
-  padding: 14px;
+  padding: 12px 14px;
 }
 
 .filter-bar label,
@@ -406,7 +455,7 @@ header h1 {
 }
 
 .bookmark-editor-list li {
-  grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
+  grid-template-columns: minmax(360px, 1.1fr) minmax(360px, 0.9fr);
   align-items: start;
 }
 
@@ -445,9 +494,9 @@ header h1 {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  border-radius: 6px;
-  background: #0f766e;
-  padding: 11px 14px;
+  border-radius: 2px;
+  background: #20b9aa;
+  padding: 8px 12px;
   color: #fff;
   text-decoration: none;
 }
@@ -477,8 +526,8 @@ header h1 {
   align-items: center;
   gap: 12px;
   border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 12px;
+  border-radius: 0;
+  padding: 9px 12px;
 }
 
 .bookmark-list strong,
@@ -500,9 +549,9 @@ header h1 {
   place-items: center;
   width: 36px;
   height: 36px;
-  border-radius: 6px;
-  color: #0f766e;
-  background: #ecfdf5;
+  border-radius: 2px;
+  color: #fff;
+  background: #20b9aa;
 }
 
 @media (max-width: 760px) {
@@ -511,7 +560,7 @@ header h1 {
   }
 
   aside {
-    padding: 16px;
+    padding: 0;
   }
 
   nav {
