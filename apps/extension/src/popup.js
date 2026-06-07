@@ -34,6 +34,8 @@ const els = {
   apiTokenInput: document.querySelector("#apiTokenInput"),
   toggleToken: document.querySelector("#toggleToken"),
   pasteSettings: document.querySelector("#pasteSettings"),
+  manualPasteWrap: document.querySelector("#manualPasteWrap"),
+  manualPasteInput: document.querySelector("#manualPasteInput"),
   testSettings: document.querySelector("#testSettings"),
   resetSettings: document.querySelector("#resetSettings"),
   toast: document.querySelector("#toast")
@@ -81,6 +83,7 @@ function bindEvents() {
   els.testSettings.addEventListener("click", handleTestSettings);
   els.resetSettings.addEventListener("click", handleResetSettings);
   els.pasteSettings.addEventListener("click", handlePasteSettings);
+  els.manualPasteInput.addEventListener("input", () => applyPastedSettings(els.manualPasteInput.value));
   els.toggleToken.addEventListener("click", () => {
     els.apiTokenInput.type = els.apiTokenInput.type === "password" ? "text" : "password";
   });
@@ -266,13 +269,49 @@ async function handleResetSettings() {
 async function handlePasteSettings() {
   try {
     const text = await navigator.clipboard.readText();
-    const [base, token] = text.split("|").map((item) => item.trim());
-    if (base) els.apiBaseInput.value = base;
-    if (token) els.apiTokenInput.value = token;
-    showToast("已粘贴");
+    if (applyPastedSettings(text)) {
+      els.manualPasteWrap.classList.add("is-hidden");
+      showToast("已粘贴");
+      return;
+    }
+    showManualPaste("剪贴板内容不是 Web 端 API 信息", "error");
   } catch {
-    showToast("无法读取剪贴板", "error");
+    showManualPaste("无法读取剪贴板，请手动粘贴", "error");
   }
+}
+
+function applyPastedSettings(text) {
+  const parsed = parseSettingsText(text);
+  if (!parsed) return false;
+  els.apiBaseInput.value = parsed.base;
+  els.apiTokenInput.value = parsed.token;
+  return true;
+}
+
+function parseSettingsText(text) {
+  const value = String(text || "").trim();
+  if (!value) return null;
+
+  const parts = value.split("|").map((item) => item.trim()).filter(Boolean);
+  if (parts.length >= 2) {
+    return { base: normalizePastedBase(parts[0]), token: parts[1] };
+  }
+
+  const base = value.match(/https?:\/\/[^\s|，,]+/i)?.[0];
+  const token = value.match(/(?:token|api\s*token)\s*[:：]\s*([a-f0-9]{32})/i)?.[1]
+    || value.match(/\b[a-f0-9]{32}\b/i)?.[0];
+  if (!base || !token) return null;
+  return { base: normalizePastedBase(base), token };
+}
+
+function normalizePastedBase(value) {
+  return value.trim().replace(/\/+(?:index\.php.*)?$/, "");
+}
+
+function showManualPaste(message, tone) {
+  els.manualPasteWrap.classList.remove("is-hidden");
+  els.manualPasteInput.focus();
+  showToast(message, tone);
 }
 
 function activate(name) {

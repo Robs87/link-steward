@@ -249,6 +249,14 @@ textarea:focus {
   min-width: 58px;
 }
 
+.manual-paste {
+  margin: 16px 0 0;
+}
+
+.manual-paste textarea {
+  min-height: 56px;
+}
+
 .notice {
   margin-bottom: 18px;
   padding: 12px 14px;

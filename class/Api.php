@@ -3056,17 +3056,14 @@ class Api {
         // 验证授权
         $this->auth($token);
 
-        // 验证订阅
-        $this->check_is_subscribe();
-
         // 记录开始时间
         $start_time = microtime(true);
 
         // 获取所有链接
-        $links = $this->db->select('on_links', '*');
+        $links = $this->db->select('on_links', ['id', 'url']);
 
-        // 设置并发限制（最大30个并发）
-        $max_concurrent_requests = 30;
+        // 设置并发限制，避免一次性请求过多外部站点。
+        $max_concurrent_requests = 10;
         $multi_curl = curl_multi_init();  // 初始化curl_multi
         $curl_handles = [];  // 存储curl句柄
         $link_count = count($links);  // 获取链接数量
@@ -3078,108 +3075,121 @@ class Api {
         // 错误链接
         $error_num = 0;
 
-        // 并发处理每个链接
-        foreach ($links as $link) {
-            // 创建一个curl句柄
-            $ch = curl_init();
+        // 未知链接
+        $unknown_num = 0;
 
-            // 设置curl选项
-            curl_setopt($ch, CURLOPT_URL, $link['url']);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);  // 返回内容而不是输出
-            curl_setopt($ch, CURLOPT_TIMEOUT, $timeout);  // 设置请求超时时间
-            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);  // 设置连接超时时间
-            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, false);  // 跟随重定向
-            // 设置UA
-            curl_setopt($ch, CURLOPT_USERAGENT, "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.5005.63 Safari/537.36");
-            curl_setopt($ch, CURLOPT_HTTPGET, true);  // 确保使用GET请求
-            curl_setopt($ch, CURLOPT_HEADER, true);  // 获取响应头
-
-            // 将curl句柄加入到multi句柄中
-            curl_multi_add_handle($multi_curl, $ch);
-
-            // 存储每个链接的ID，方便回调时更新状态
-            $curl_handles[$link['id']] = $ch;
+        if($link_count === 0) {
+            $this->return_json(200, [
+                'total_links' => 0,
+                'completed_links' => 0,
+                'elapsed_time' => 0,
+                'error_num' => 0,
+                'unknown_num' => 0
+            ], 'success');
         }
 
-        // 执行curl请求并监听
-        do {
-            $status = curl_multi_exec($multi_curl, $active);  // 执行请求
-            if ($status > 0) {
-                // 如果发生错误，输出错误信息
-                // echo "Curl error: " . curl_multi_strerror($status);
-            }
+        $web_servers = [
+            'cloudflare',
+            'waf',
+            'AkamaiGHost',
+            'JDCloudStarshield'
+        ];
 
-            // 等待活动的请求完成
-            if ($active) {
-                curl_multi_select($multi_curl, 1);  // 阻塞直到有活动的请求
-            }
-        } while ($active);
+        $handle_key = function($ch) {
+            return is_object($ch) ? spl_object_id($ch) : intval($ch);
+        };
 
-        // 处理每个请求的返回结果
-        foreach ($curl_handles as $id => $ch) {
-            $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);  // 获取HTTP状态码
-            $error = curl_error($ch);  // 获取cURL错误信息
-            
-            $header = curl_multi_getcontent($ch);  // 获取完整的响应内容，包括头部
-            // 获取Server头
+        $add_handle = function($link) use ($multi_curl, &$curl_handles, $handle_key, $timeout) {
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $link['url']);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_NOBODY, true);
+            curl_setopt($ch, CURLOPT_TIMEOUT, $timeout);
+            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+            curl_setopt($ch, CURLOPT_MAXREDIRS, 3);
+            curl_setopt($ch, CURLOPT_USERAGENT, "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36");
+            curl_setopt($ch, CURLOPT_HEADER, true);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+            curl_multi_add_handle($multi_curl, $ch);
+            $curl_handles[$handle_key($ch)] = [
+                'id' => intval($link['id']),
+                'url' => $link['url'],
+                'handle' => $ch
+            ];
+        };
+
+        $record_result = function($meta) use (&$completed_links, &$error_num, &$unknown_num, $web_servers) {
+            $ch = $meta['handle'];
+            $http_code = intval(curl_getinfo($ch, CURLINFO_HTTP_CODE));
+            $error = curl_error($ch);
+            $header = curl_multi_getcontent($ch);
             preg_match('/^Server:\s*(.*)$/mi', $header, $matches);
-            $server_header = isset($matches[1]) ? $matches[1] : '';  // 获取Server头的值
-            // 获取当前时间戳
+            $server_header = isset($matches[1]) ? $matches[1] : '';
             $last_checked_time = date('Y-m-d H:i:s');
 
-            // 定义 Web 服务器列表
-            $web_servers = [
-                'cloudflare',
-                'waf',
-                // 可以根据需要添加更多的 Web 服务器类型
-                'AkamaiGHost',
-                'JDCloudStarshield'
-            ];
-
-            // 假设 $error 和 $http_code 已经定义
-            // 假设 $server_header 已经从响应头中获取
-
-            if ($error || $http_code >= 400) {
-                // 默认状态为异常
-                $check_status = 2;  // 异常
-                // 遍历 Web 服务器列表，检查是否包含任何已知的 Web 服务器标识
+            if($error || $http_code === 0 || $http_code >= 400) {
+                $check_status = 2;
                 foreach ($web_servers as $server) {
-                    if (stripos($server_header, $server) !== false) {
-                        // 如果找到匹配的服务器，设置为未知状态
-                        $check_status = 3;  // 未知
-                        break;  // 一旦找到匹配的服务器，跳出循环
+                    if(stripos($server_header, $server) !== false) {
+                        $check_status = 3;
+                        break;
                     }
                 }
-                // 如果没有匹配到任何已知的 Web 服务器，则认为是异常
-                if ($check_status == 2) {
-                    // 错误数量+1
+                if($check_status === 2) {
                     $error_num++;
                 }
+                else{
+                    $unknown_num++;
+                }
             }
-            else if( $http_code === 0 ) {
-                // HTTP 状态码为 0，表示链接超时，或者SSL证书过期
-                $check_status = 2;  // 异常
-                // 错误数量+1
-                $error_num++;
-            }
-            else {
-                // HTTP 状态码小于 400，表示正常
-                $check_status = 1;  // 正常
+            else{
+                $check_status = 1;
             }
 
-            // 更新数据库字段
             $this->db->update('on_links', [
                 'check_status' => $check_status,
                 'last_checked_time' => $last_checked_time
-            ], ['id' => $id]);
+            ], ['id' => $meta['id']]);
 
-            // 删除curl句柄，释放资源
-            curl_multi_remove_handle($multi_curl, $ch);
-            curl_close($ch);  // 关闭curl句柄
-
-            // 完成一个链接的检测
             $completed_links++;
+        };
+
+        $pending_index = 0;
+        $active = null;
+
+        while($pending_index < $link_count && count($curl_handles) < $max_concurrent_requests) {
+            $add_handle($links[$pending_index]);
+            $pending_index++;
         }
+
+        do {
+            do {
+                $status = curl_multi_exec($multi_curl, $active);
+            } while($status === CURLM_CALL_MULTI_PERFORM);
+
+            while($info = curl_multi_info_read($multi_curl)) {
+                $ch = $info['handle'];
+                $key = $handle_key($ch);
+                if(isset($curl_handles[$key])) {
+                    $record_result($curl_handles[$key]);
+                    unset($curl_handles[$key]);
+                }
+
+                curl_multi_remove_handle($multi_curl, $ch);
+                curl_close($ch);
+
+                if($pending_index < $link_count) {
+                    $add_handle($links[$pending_index]);
+                    $pending_index++;
+                }
+            }
+
+            if($active) {
+                curl_multi_select($multi_curl, 1);
+            }
+        } while($active || count($curl_handles) > 0);
 
         // 关闭multi句柄
         curl_multi_close($multi_curl);
@@ -3194,9 +3204,11 @@ class Api {
 
         // 返回成功
         $this->return_json(200, [
+            'total_links' => $link_count,
             'completed_links' => $completed_links,
             'elapsed_time' => $elapsed_time,
-            'error_num' => $error_num
+            'error_num' => $error_num,
+            'unknown_num' => $unknown_num
         ], 'success');
     }
 

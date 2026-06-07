@@ -151,7 +151,7 @@ layui.use(['table','form'], function(){
     form.on('submit(batch_check)', function(data){
         let content = `
 <ul>
-<li>1. 此功能仅订阅用户可用！</li>
+<li>1. 将检测全部链接是否可访问，并更新“状态”和“检测时间”。</li>
 <li>2. 检测较为耗时，检测期间请勿关闭和刷新此页面！</li>
 <li>3. 检测结果仅供参考，无法确保100%准确，具体以实际访问为准！</li>
 </ul>
@@ -173,13 +173,15 @@ layui.use(['table','form'], function(){
                 success: function(response) {
                     // 请求成功后执行的代码
                     if( response.code == 200 ) {
+                        let result = response.data || {};
+                        let message = `批量检测完成：${result.completed_links || 0}/${result.total_links || 0}，异常 ${result.error_num || 0}，未知 ${result.unknown_num || 0}，耗时 ${result.elapsed_time || 0}s`;
                         // 关闭全局加载
                         layer.close(index);
-                        layer.msg("批量检测成功！",{icon:1});
+                        layer.msg(message,{icon:1,time:3500});
                         // 2s后重新载入页面
                         setTimeout(function(){
                             location.reload();
-                        },2000);
+                        },3500);
                     }
                     else{
                         layer.msg(response.msg,{icon:5});
