@@ -4,6 +4,44 @@ layui.config({
   iconHhysFa: 'iconHhys/iconHhysFa'
 });
 
+function select_link_rows_by_status(table_id,status) {
+  layui.use(['table','form'], function(){
+    var table = layui.table;
+    var form = layui.form;
+    var rows = table.cache[table_id] || [];
+    var selected = 0;
+    var $view = $('.layui-table-view[lay-id="' + table_id + '"]');
+
+    $view.find('input[name="layTableCheckbox"]').prop('checked', false);
+    rows.forEach(function(row){
+      if(row) {
+        row.LAY_CHECKED = false;
+      }
+    });
+
+    $view.find('.layui-table-body tbody tr').each(function(){
+      var index = $(this).attr('data-index');
+      var row = rows[index];
+      if(row && Number(row.check_status || 0) === Number(status)) {
+        row.LAY_CHECKED = true;
+        $(this).find('input[name="layTableCheckbox"]').prop('checked', true);
+        selected++;
+      }
+    });
+
+    form.render('checkbox');
+    layer.msg('已选中当前页 ' + selected + ' 条' + status_text(status) + '链接',{icon:1});
+  });
+}
+
+function status_text(status) {
+  status = Number(status);
+  if(status === 1) return '正常';
+  if(status === 2) return '异常';
+  if(status === 3) return '未知';
+  return '未检测';
+}
+
 
 
 /**
@@ -144,9 +182,10 @@ layui.use(['element','table','layer','form','upload','iconHhysFa'], function(){
     }
   });
   //渲染链接列表
-  table.render({
-    elem: '#link_list'
-    ,height: 530
+	  table.render({
+	    elem: '#link_list'
+	    ,id: 'link_list'
+	    ,height: 530
     ,url: 'index.php?c=api&method=link_list' //数据接口
     ,method: 'post'
     ,page: true //开启分页
@@ -308,18 +347,30 @@ layui.use(['element','table','layer','form','upload','iconHhysFa'], function(){
         //调用函数设为私有
         set_link_attribute(ids,1);
         break;
-      case "set_public":
-        //用户点击设为私有按钮
-        var data = checkStatus.data;
+	      case "set_public":
+	        //用户点击设为私有按钮
+	        var data = checkStatus.data;
         ids = [];
         //获取链接所有ID，并拼接为数组
         for(let i = 0;i < data.length;i++) {
           ids.push(data[i].id);
         }
-        //调用函数设为公有
-        set_link_attribute(ids,0);
-        break;
-      case "addCategory":
+	        //调用函数设为公有
+	        set_link_attribute(ids,0);
+	        break;
+	      case "select_status_1":
+	        select_link_rows_by_status(obj.config.id, 1);
+	        break;
+	      case "select_status_2":
+	        select_link_rows_by_status(obj.config.id, 2);
+	        break;
+	      case "select_status_3":
+	        select_link_rows_by_status(obj.config.id, 3);
+	        break;
+	      case "select_status_0":
+	        select_link_rows_by_status(obj.config.id, 0);
+	        break;
+	      case "addCategory":
         //用户点击添加分类按钮,打开一个弹窗操作
         // 添加分类
         layer.open({
@@ -525,9 +576,10 @@ layui.use(['element','table','layer','form','upload','iconHhysFa'], function(){
       return false;
     }
     //表格重载
-    var tableIns = table.render({
-      elem: '#link_list'
-      ,height: 520
+	    var tableIns = table.render({
+	      elem: '#link_list'
+	      ,id: 'link_list'
+	      ,height: 520
       ,url: 'index.php?c=api&method=q_category_link' //数据接口
       ,method: 'post'
       ,page: true //开启分页

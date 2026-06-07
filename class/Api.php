@@ -3060,7 +3060,7 @@ class Api {
         $start_time = microtime(true);
 
         // 获取所有链接
-        $links = $this->db->select('on_links', ['id', 'url']);
+        $links = $this->db->select('on_links', ['id', 'url', 'font_icon']);
 
         // 设置并发限制，避免一次性请求过多外部站点。
         $max_concurrent_requests = 10;
@@ -3116,6 +3116,7 @@ class Api {
             $curl_handles[$handle_key($ch)] = [
                 'id' => intval($link['id']),
                 'url' => $link['url'],
+                'font_icon' => $link['font_icon'],
                 'handle' => $ch
             ];
         };
@@ -3148,10 +3149,18 @@ class Api {
                 $check_status = 1;
             }
 
-            $this->db->update('on_links', [
+            $update_data = [
                 'check_status' => $check_status,
                 'last_checked_time' => $last_checked_time
-            ], ['id' => $meta['id']]);
+            ];
+            if($this->should_refresh_link_icon($meta['font_icon'])) {
+                $favicon = $this->build_link_favicon($meta['url']);
+                if(!empty($favicon)) {
+                    $update_data['font_icon'] = $favicon;
+                }
+            }
+
+            $this->db->update('on_links', $update_data, ['id' => $meta['id']]);
 
             $completed_links++;
         };
@@ -3210,6 +3219,36 @@ class Api {
             'error_num' => $error_num,
             'unknown_num' => $unknown_num
         ], 'success');
+    }
+
+    /**
+     * 从链接 URL 生成一个稳定的 favicon 地址。
+     */
+    protected function build_link_favicon($url) {
+        $parts = parse_url($url);
+        if(empty($parts['host'])) {
+            return '';
+        }
+
+        $scheme = empty($parts['scheme']) ? 'https' : $parts['scheme'];
+        if(!in_array($scheme, ['http','https'])) {
+            return '';
+        }
+
+        $base_url = $scheme . '://' . $parts['host'];
+        return 'https://t0.gstatic.cn/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&size=32&url=' . urlencode($base_url);
+    }
+
+    /**
+     * 仅刷新空图标或系统自动生成的 favicon，避免覆盖用户手动上传的图标。
+     */
+    protected function should_refresh_link_icon($font_icon) {
+        $font_icon = trim(strval($font_icon));
+        if($font_icon === '') {
+            return TRUE;
+        }
+
+        return (strpos($font_icon, 't0.gstatic.cn/faviconV2') !== FALSE) || (strpos($font_icon, 'www.google.com/s2/favicons') !== FALSE);
     }
 
     // 获取过渡页API

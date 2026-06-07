@@ -78,6 +78,10 @@
             <button class="layui-btn layui-btn-sm" lay-event="readmoredata">批量修改分类</button>
             <button class="layui-btn layui-btn-sm" lay-event="set_private">设为私有</button>
             <button class="layui-btn layui-btn-sm" lay-event="set_public">设为公有</button>
+            <button class="layui-btn layui-btn-sm layui-btn-normal" lay-event="select_status_2">选中异常</button>
+            <button class="layui-btn layui-btn-sm layui-btn-warm" lay-event="select_status_3">选中未知</button>
+            <button class="layui-btn layui-btn-sm" lay-event="select_status_1">选中正常</button>
+            <button class="layui-btn layui-btn-sm layui-btn-primary" lay-event="select_status_0">选中未检测</button>
             <button class="layui-btn layui-btn-sm" lay-event="reset_query">重置查询</button>
             <button class="layui-btn layui-btn-sm" lay-event="addCategory">添加分类</button>
             <button class="layui-btn layui-btn-sm" lay-event="addLink">添加链接</button>
@@ -238,6 +242,7 @@ layui.use(['table','form'], function(){
         //渲染链接列表
         table.render({
             elem: '#link_list'
+            ,id: 'link_list'
             ,height: 530
             ,url: 'index.php?c=api&method=global_search&keyword=' + keyword //数据接口
             ,method: 'post'
@@ -323,6 +328,7 @@ function reset_query(){
         //渲染链接列表
         table.render({
             elem: '#link_list'
+            ,id: 'link_list'
             ,height: 530
             ,url: 'index.php?c=api&method=link_list'
             ,method: 'post'
