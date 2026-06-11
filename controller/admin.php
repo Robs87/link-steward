@@ -258,14 +258,7 @@ if( $page == 'setting/theme' ) {
     //获取当前主题
     $current_them = $db->get('on_options','value',[ 'key'  =>  "theme" ]);
 
-    //获取在线主题列表
-    $theme_list = curl_get("https://onenav.xiaoz.top/v1/theme_list.php");
-    $theme_list = json_decode($theme_list)->data;
-    //var_dump($theme_list);
-    //去重一下
-    foreach ($themes as $key => $value) {
-        unset($theme_list->$key);
-    }
+    $theme_list = [];
     
 }
 

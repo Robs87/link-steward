@@ -706,7 +706,7 @@ layui.use(['element','table','layer','form','upload','iconHhysFa'], function(){
     .error(function(xhr,status,error){
         // 关闭加载
         layer.closeAll('loading');
-        layer.msg("请求失败，请检查服务器网络或联系售后！",{icon:5});
+        layer.msg("请求失败，请检查服务器网络或稍后重试！",{icon:5});
     });
     // console.log(data.field) //当前容器的全部表单字段，名值对形式：{name: value}
     return false; //阻止表单跳转。如果需要表单跳转，去掉这段即可。
@@ -1091,7 +1091,7 @@ function check_weak_password(){
         
         layer.open({
           title:'风险提示！',
-          content: '系统检测到您使用的默认密码，请参考<a href = "https://dwz.ovh/ze1ts" target = "_blank" style = "color:#01AAED;">帮助文档</a>尽快修改！' //这里content是一个普通的String
+          content: '系统检测到您使用的默认密码，请在配置文件中修改管理员账号和密码。'
         });
       });   
     }
@@ -1106,7 +1106,7 @@ function check_db_down(){
     url:"/data/onenav.db3",
     statusCode: {
       200: function() {
-        let msg = `危险！！！危险！！！危险！！！数据库可被下载，请尽快参考帮助文档：<a target = "_blank" href = "https://dwz.ovh/jvr2t">https://dwz.ovh/jvr2t</a> 加固安全设置！<br /><br />`;
+        let msg = `危险！！！危险！！！危险！！！数据库可被下载，请检查 Web 服务器规则，确保 data/onenav.db3 无法被公网访问。<br /><br />`;
         $("#console_log").append(msg);
       },
       403:function() {
@@ -1177,10 +1177,7 @@ function get_latest_version(){
         $("#latest_version").text(latest_version);
 
         // 改变显示内容
-        let new_version = `
-<a href="https://github.com/helloxz/onenav/releases" title="下载最新版OneNav" target="_blank" id="latest_version">${latest_version}</a> 
-[<a href="/index.php?c=admin&page=setting/subscribe" title="订阅后可一键更新">一键更新</a>]
-`;
+        let new_version = `<span id="latest_version">${latest_version}</span>`;
         $("#new_version").html(new_version);
         $("#new_version").show();
 
@@ -1218,12 +1215,12 @@ function set_link_attribute(ids,property) {
 
 //导出所有链接
 function export_link(url, fileName) {
-  layer.confirm('导出的链接可以导入到浏览器也可以再次导入到OneNav/ZMark！', {icon: 3, title:'确定导出所有链接？'}, function(index){
+  layer.confirm('导出的链接可以导入到浏览器，也可以再次导入到 Link Steward。', {icon: 3, title:'确定导出所有链接？'}, function(index){
     var date = new Date();
   var current_time = date.toLocaleDateString();
   current_time = current_time.replaceAll("/",".");
   var url = "index.php?c=api&method=export_link";
-  var fileName = "OneNav_Export_" + current_time + ".html";
+  var fileName = "Link_Steward_Export_" + current_time + ".html";
   var x = new XMLHttpRequest();
   x.open("GET", url, true);
   x.responseType = 'blob';
@@ -1243,12 +1240,12 @@ function export_link(url, fileName) {
 
 //导出JSON链接数据
 function export_json(url, fileName) {
-  layer.confirm('导出的JSON数据支持导入到ZMark中，请妥善保存导出的文件。', {icon: 3, title:'确定导出JSON？'}, function(index){
+  layer.confirm('导出的JSON数据请妥善保存，可用于迁移或备份。', {icon: 3, title:'确定导出JSON？'}, function(index){
     var date = new Date();
     var current_time = date.toLocaleDateString();
     current_time = current_time.replaceAll("/",".");
     var url = "index.php?c=api&method=export_json";
-    var fileName = "OneNav_Export_" + current_time + ".json";
+    var fileName = "Link_Steward_Export_" + current_time + ".json";
     var x = new XMLHttpRequest();
     x.open("GET", url, true);
     x.responseType = 'blob';
@@ -1381,15 +1378,5 @@ function getCurrentDomain() {
 }
 // 技术支持函数
 function support() {
-  let domain = getCurrentDomain();
-  let description = "域名：" + domain; 
-  let support_url = "https://support.xiuping.net/service/index?lang=zh_CN&product_id=1&description=" + description;
-  layer.open({
-    type: 2,
-    title: false,
-    shadeClose: true,
-    shade: 0.8,
-    area: ['700px', '780px'],
-    content: support_url // iframe 的 url
-  });
+  layer.msg("请通过 Link Steward 项目仓库反馈问题。", {icon: 1});
 }

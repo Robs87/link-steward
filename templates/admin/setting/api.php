@@ -8,7 +8,7 @@
     <!-- 说明提示框 -->
     <div class="layui-col-lg12">
       <div class="setting-msg">
-        API使用说明，请参考：<a href="https://dwz.ovh/viot5" target = "_blank" title = "OneNav API使用说明">https://dwz.ovh/viot5</a>
+        API Token 可用于浏览器扩展或自动化脚本。鉴权方式：请求参数 <code>token=md5(USER + SecretKey)</code> 或请求头 <code>X-Token</code>。
       </div>
     </div>
     <!-- 说明提示框END -->
@@ -18,21 +18,21 @@
         <div class="layui-form-item">
             <label class="layui-form-label" style = "width:130px;">用户名</label>
             <div class="layui-input-inline">
-                <input style = "width:400px;" type="text" readonly="readonly" name="username" value = "<?php echo USER; ?>" autocomplete="off" placeholder="OneNav用户名" class="layui-input">
+                <input style = "width:400px;" type="text" readonly="readonly" name="username" value = "<?php echo USER; ?>" autocomplete="off" placeholder="用户名" class="layui-input">
             </div>
         </div>
 
         <div class="layui-form-item">
             <label class="layui-form-label" style = "width:130px;">API域名</label>
             <div class="layui-input-inline">
-                <input style = "width:400px;" type="text" readonly="readonly" id="api_domain" name="api_domain" autocomplete="off" placeholder="OneNav API域名" class="layui-input">
+                <input style = "width:400px;" type="text" readonly="readonly" id="api_domain" name="api_domain" autocomplete="off" placeholder="API域名" class="layui-input">
             </div>
         </div>
 
         <div class="layui-form-item">
             <label class="layui-form-label" style = "width:130px;">SecretKey</label>
             <div class="layui-input-inline">
-                <input style = "width:400px;" type="text" readonly="readonly" name="SecretKey" id = "SecretKey" value = "<?php echo $SecretKey; ?>" autocomplete="off" placeholder="OneNav SecretKey" class="layui-input">
+                <input style = "width:400px;" type="text" readonly="readonly" name="SecretKey" id = "SecretKey" value = "<?php echo $SecretKey; ?>" autocomplete="off" placeholder="SecretKey" class="layui-input">
             </div>
             
         </div>

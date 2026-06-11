@@ -353,39 +353,12 @@ function set_site($api) {
     //序列化存储
     $value = serialize($data);
 
-    if( !empty($data['custom_footer']) ) {
-        if( !$api->is_subscribe() ) {
-            $api->err_msg(-2000,'保存失败，自定义footer需要订阅用户才能使用，若未订阅请留空！');
-        }
-        
-    }
-    
-
     $api->set_option('s_site',$value);
 }
 
-//阻止非订阅用户保存设置
+// 开源版不再按远程订阅限制本地功能。
 function _deny_set($content,$err_msg) {
-    global $api;
-    //验证订阅,返回TRUE或FALSE
-    if ( !isset($_SESSION['subscribe']) ) {
-        //验证订阅,返回TRUE或FALSE
-        $result = $api->is_subscribe();
-    }
-    
-    //如果内容是空的，直接允许
-    if ( empty($content) ) {
-        return TRUE;
-    }
-    else{
-        if( $_SESSION['subscribe'] === TRUE ) {
-            return TRUE;
-        }
-        else{
-            $api->err_msg(-2000,$err_msg);
-        }
-
-    }
+    return TRUE;
 }
 //设置订阅信息
 function set_subscribe($api) {
@@ -437,11 +410,10 @@ function set_transition_page($api) {
     $data['a_d_2'] = $_POST['a_d_2'];
     
 
-    //验证订阅
-    _deny_set($data['menu'],'保存失败，过渡页菜单需要订阅用户才能使用！');
-    _deny_set($data['footer'],'保存失败，自定义footer需要订阅用户才能使用！');
-    _deny_set($data['a_d_1'],'保存失败，自定义广告需要订阅用户才能使用！');
-    _deny_set($data['a_d_2'],'保存失败，自定义广告需要订阅用户才能使用！');
+    _deny_set($data['menu'],'');
+    _deny_set($data['footer'],'');
+    _deny_set($data['a_d_1'],'');
+    _deny_set($data['a_d_2'],'');
     
     //序列化存储
     $value = serialize($data);
@@ -455,35 +427,13 @@ function create_sk($api) {
     $api->create_sk();
 }
 
-//获取onenav最新版本号
+//获取当前版本号。开源版不再请求上游版本接口。
 function get_latest_version() {
-    try {
-        $curl = curl_init("https://git.xiaoz.org/xiaoz/onenav/raw/branch/main/version.txt");
-
-        curl_setopt($curl, CURLOPT_USERAGENT, "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Safari/537.36 Edg/100.0.1185.50");
-        curl_setopt($curl, CURLOPT_FAILONERROR, true);
-        curl_setopt($curl, CURLOPT_FOLLOWLOCATION, true);
-        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
-        curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, false);
-        #设置超时时间，最小为1s（可选）
-        curl_setopt($curl , CURLOPT_TIMEOUT, 5);
-
-        $html = curl_exec($curl);
-        curl_close($curl);
-        $data = [
-            "code"      =>  200,
-            "msg"       =>  "",
-            "data"      =>  $html
-        ];
-        
-    } catch (\Throwable $th) {
-        $data = [
-            "code"      =>  200,
-            "msg"       =>  "",
-            "data"      =>  ""
-        ];
-    }
+    $data = [
+        "code"      =>  200,
+        "msg"       =>  "",
+        "data"      =>  @file_get_contents("version.txt")
+    ];
     exit(json_encode($data));
 }
 
@@ -542,7 +492,7 @@ function export_link($api) {
         $name = $cat['name'];
         // 特殊处理默认分类名称
         if ($name === '默认分类') {
-            $name = 'OneNav默认分类';
+            $name = 'Link Steward 默认分类';
         }
         $name = htmlspecialchars($name, ENT_QUOTES);
         $add_date = isset($cat['add_time']) && intval($cat['add_time'])>0 ? intval($cat['add_time']) : $now;
@@ -609,7 +559,7 @@ function export_json($api) {
 
     if (!is_array($payload)) { $payload = []; }
 
-    $fileName = 'OneNav_Export_' . date('Ymd') . '.json';
+    $fileName = 'Link_Steward_Export_' . date('Ymd') . '.json';
     header('Content-Disposition: attachment; filename="' . $fileName . '"');
     echo json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) . "\n";
 }

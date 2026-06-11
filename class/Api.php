@@ -10,28 +10,7 @@ require("./functions/helper.php");
 class Api {
     protected $db;
     public function __construct($db){
-        // 获取API服务器缓存
-        $api_url = $this->getFileCache("api_url");
-        
-        // 如果API地址为空，则设置API地址
-        if ($api_url == ""){
-            // 设置API地址（xiaoz）
-            $api_url = base64_decode("aHR0cHM6Ly9vbmVuYXYueGlhb3oudG9w");
-            // 获取API服务器状态码，超时时间为2s
-            $http_code = $this->GetHeadCode($api_url,2);
-            // 如果状态码为0、301、302均视为失败
-            if( $http_code === 0 || $http_code === 301 || $http_code === 302 ) {
-                // 失败了则设置备用API地址（rss）
-                $api_url = base64_decode("aHR0cHM6Ly9vbmVuYXYucnNzLmluaw==");
-            }
-            // 设置API地址缓存
-            $this->setFileCache("api_url",$api_url,60 * 60 * 24);
-        }
-            
-        
-        // $api_url = base64_decode("aHR0cHM6Ly9vbmVuYXYucnNzLmluaw==");
-        // 设置常量
-        define("API_URL",$api_url);
+        define("API_URL",'');
         // 修改默认获取模式为关联数组
         $db->pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
         $this->db = $db;
@@ -2133,296 +2112,46 @@ class Api {
     public function check_subscribe() {
         //验证token是否合法
         $this->auth($token);
-        //获取订阅信息
-        //获取当前站点信息
-        $subscribe = $this->db->get('on_options','value',[ 'key'  =>  "s_subscribe" ]);
-        $domain = $_SERVER['HTTP_HOST'];
-    
-        $subscribe = unserialize($subscribe);
-        //api请求地址
-        $api_url = API_URL."/v1/check_subscribe.php?order_id=".$subscribe['order_id']."&email=".$subscribe['email']."&domain=".$domain;
-
-        // 如果邮箱或者订单号为空，则返回提示
-        if( empty($subscribe['order_id']) || empty($subscribe['email']) ) {
-            $this->return_json(-2000,'','此功能需要订阅！');
-        }
-        
-        try {
-            #GET HTTPS
-            $curl = curl_init($api_url);
-            #设置useragent
-            curl_setopt($curl, CURLOPT_USERAGENT, "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.5005.63 Safari/537.36");
-            curl_setopt($curl, CURLOPT_FAILONERROR, true);
-            curl_setopt($curl, CURLOPT_FOLLOWLOCATION, true);
-            curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
-            curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, false);
-            #设置超时时间，最小为1s（可选）
-            curl_setopt($curl , CURLOPT_TIMEOUT, 30);
-
-            $html = curl_exec($curl);
-            curl_close($curl);
-            //解析json
-            $data = json_decode($html);
-            //var_dump($data->data->end_time);
-            //echo strtotime($data->data->end_time);
-            //var_dump($data->code);
-            //如果状态码返回200，并且订阅没有到期
-            if( (intval($data->code) === 200) && ( $data->data->end_time > ( strtotime( date("Y-m-d",time()) ) )) ) {
-                $this->return_json(200,$data->data,'success');
-            }
-            else if( intval($data->code === -1000 ) ) {
-                $this->return_json(-2000,'',$data->msg);
-            }
-            else{
-                $this->return_json(-2000,'',"请求接口失败，请重试！");
-            }
-        } catch (\Throwable $th) {
-            $this->return_json(-2000,'','网络请求失败，请重试！');
-        }
+        $data = [
+            'email'     =>  EMAIL,
+            'domain'    =>  $_SERVER['HTTP_HOST'],
+            'end_time'  =>  strtotime('+100 years'),
+            'key'       =>  'local',
+            'value'     =>  'enabled'
+        ];
+        $this->return_json(200,$data,'success');
     }
     /**
      * 下载主题
      */
     public function down_theme($data) {
-        //主题名称
-        $name = $data['name'];
-        //key-value
-        $key = $data['key'];
-        $value = $data['value'];
-        //拼接主题URL
-        $url = API_URL."/v1/down_theme.php?name=${name}&key=${key}&value=${value}";
-        //验证token是否合法
         $this->auth($token);
-        //检查主题是否已经存在
-        if ( $data['type'] == 'download' ) {
-            $theme1 = "templates/".$name;
-            $theme2 = "data/templates/".$name;
-
-            if( is_dir($theme1) || is_dir($theme2) ) {
-                $this->return_json(-2000,'','主题已存在，无需重复下载！');
-            }
-        }
-        //如果返回404状态
-        $res = get_headers($url,1);
-        if( strstr($res[0],'404') ) {
-            $this->return_json(-2000,'','远程服务器上不存在此主题！');
-        }
-        //判断主题目录是否存在,如果curl_host是alpine，则视为容器，容器则将主题目录设置为data/templates
-        $curl_host = curl_version()['host'];
-        if( strstr($curl_host,'alpine') ) {
-            // 默认主题一律保存到templates目录
-            if( $name == "default2" ) {
-                $theme_dir = "templates";
-            }
-            else{
-                $theme_dir = "data/templates";
-            }
-        }
-        else{
-            $theme_dir = "templates";
-        }
-        //主题完整压缩包路径
-        $file_name = $theme_dir."/${name}.tar.gz";
-        if( !is_dir($theme_dir) ) {
-            mkdir($theme_dir,0755);
-        }
-        
-        //尝试下载主题
-        try {
-            //下载主题，并设置超时时间为120s
-            $content = $this->curl_get($url,120);
-            //写入主题
-            $re = file_put_contents($theme_dir."/${name}.tar.gz",$content);
-            //如果写入主题失败了，说明权限不粗糙
-            if( !$re ) {
-                $this->return_json(-2000,'','主题写入失败，请检查目录权限！');
-            }
-            else{
-                //解压文件
-                $phar = new PharData($file_name);
-                //路径 要解压的文件 是否覆盖
-                $phar->extractTo($theme_dir."/${name}", null, true);
-                //删除主题
-                unlink($file_name);
-                $this->return_json(200,'','主题下载成功！');
-            }
-
-        } catch (\Throwable $th) {
-            $this->return_json(-2000,'','主题下载失败，请检查目录权限！');
-        }
-        finally{
-            unlink($file_name);
-        }
+        $this->return_json(-2000,'','在线主题下载已移除，请将主题目录放入 templates/ 或 data/templates/。');
 
     }
     /**
      * 验证订阅是否存在
      */
     public function is_subscribe() {
-        //获取订阅SESSION状态
         session_start();
-        //获取session订阅状态
-        $is_subscribe = $_SESSION['subscribe'];
-        //如果订阅是空的，则请求接口获取订阅状态
-        if ( !isset($is_subscribe) ) {
-            //获取当前站点信息
-            $subscribe = $this->db->get('on_options','value',[ 'key'  =>  "s_subscribe" ]);
-            $domain = $_SERVER['HTTP_HOST'];
-        
-            $subscribe = unserialize($subscribe);
-            //api请求地址
-            $api_url = API_URL."/v1/check_subscribe.php?order_id=".$subscribe['order_id']."&email=".$subscribe['email']."&domain=".$domain;
-            // echo $api_url;
-            try {
-                #GET HTTPS
-                $curl = curl_init($api_url);
-                #设置useragent
-                curl_setopt($curl, CURLOPT_USERAGENT, "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.5005.63 Safari/537.36");
-                curl_setopt($curl, CURLOPT_FAILONERROR, true);
-                curl_setopt($curl, CURLOPT_FOLLOWLOCATION, true);
-                curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-                curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
-                curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, false);
-                #设置超时时间，最小为1s（可选）
-                curl_setopt($curl , CURLOPT_TIMEOUT, 30);
-    
-                $html = curl_exec($curl);
-                curl_close($curl);
-                //解析json
-                $data = json_decode($html);
-                //var_dump($data->data->end_time);
-                //echo strtotime($data->data->end_time);
-                //var_dump($data->code);
-                //如果状态码返回200，并且订阅没有到期
-                if( (intval($data->code) === 200) && ( $data->data->end_time > ( strtotime( date("Y-m-d",time()) ) )) ) {
-                    $_SESSION['subscribe'] = TRUE;
-                    return TRUE;
-                }
-                else if( intval($data->code === -1000 ) ) {
-                    $_SESSION['subscribe'] = FALSE;
-                    return FALSE;
-                }
-                else{
-                    $_SESSION['subscribe'] = NULL;
-                }
-            } catch (\Throwable $th) {
-                $_SESSION['subscribe'] = NULL;
-            }
-        }
-        if( $is_subscribe == TRUE ) {
-            return TRUE;
-        }
-        else{
-            return FALSE;
-        }
+        $_SESSION['subscribe'] = TRUE;
+        return TRUE;
     }
     /**
      * name:验证订阅，订阅不存在，则阻止
      */
     public function check_is_subscribe(){
-        $result = $this->is_subscribe();
-
-        if( $result === FALSE ) {
-            $this->return_json(-2000,'','该功能需要订阅后才能使用！');
-        }
-        else if( $result === TRUE ) {
-            return TRUE;
-        }
-        else{
-            $this->return_json(-2000,'','该功能需要订阅后才能使用！');
-        }
+        return TRUE;
     }
     /**
      * 无脑下载更新程序
      */
     public function down_updater() {
-        $url = API_URL."/update.tar.gz";
-        // echo $url;
-        // exit;
-        try {
-            //检查本地是否存在更新程序
-            $curl = curl_init($url);
-            #设置useragent
-            curl_setopt($curl, CURLOPT_USERAGENT, "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.5005.63 Safari/537.36");
-            curl_setopt($curl, CURLOPT_FAILONERROR, true);
-            curl_setopt($curl, CURLOPT_FOLLOWLOCATION, true);
-            curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
-            curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, false);
-            #设置超时时间，最小为1s（可选）
-            curl_setopt($curl , CURLOPT_TIMEOUT, 60);
-
-            $html = curl_exec($curl);
-            curl_close($curl);
-            //var_dump($html);
-            //return $html;
-            //写入文件
-            file_put_contents("update.tar.gz",$html);
-            //解压覆盖文件
-            //解压文件
-            $phar = new PharData('update.tar.gz');
-            //路径 要解压的文件 是否覆盖
-            $phar->extractTo('./', null, true);
-            return TRUE;
-        } catch (\Throwable $th) {
-            $this->return_json(-2000,"","更新程序下载失败！");
-        }
-        finally{
-            //再次判断更新程序是否存在
-            if( is_file("update.php") ) {
-                //判断是否大约0
-                $file_size = filesize("update.php");
-                if( $file_size < 100 ) {
-                    $this->return_json(-2000,"","更新程序异常，请检查目录权限！");
-                }
-                else{
-                    return TRUE;
-                }
-            }
-            else{
-                $this->return_json(-2000,"","更新程序下载失败，请检查目录权限！");
-            }
-        }
+        $this->return_json(-2000,"","远程一键更新已移除，请通过 Git 或容器镜像更新。");
     }
     /**更新升级程序 */
     public function up_updater() {
-        
-        //如果不存在，则下载更新程序
-        if( !is_file("update.php") ) {
-            if ( $this->down_updater() ) {
-                $this->return_json(200,"","更新程序准备就绪！");
-            }
-
-        }
-        //如果存在更新程序，验证大小，大小不匹配时进行更新
-        if( is_file("update.tar.gz") ) {
-            //获取header头
-            $header = get_headers(API_URL."/update.tar.gz",1);
-            $lentgh = $header['Content-Length'];
-            //获取文件大小
-            $file_size = filesize("update.tar.gz");
-            //如果本地文件大小和远程文件大小不一致，则下载更新
-            if ( $file_size != $lentgh ) {
-                if ( $this->down_updater() ) {
-                    //更新完毕后提示
-                    $this->return_json(200,"","更新程序更新完毕！");
-                }
-                else{
-                    $this->return_json(-2000,"","更新程序下载失败，请检查目录权限！");
-                }
-                
-            }
-            else {
-                $this->return_json(200,"","更新程序（压缩包）准备就绪！");
-            }
-        }
-        else if( is_file("update.php") ) {
-            $this->return_json(200,"","更新程序（PHP）准备就绪！");
-        }
-        else{
-            $this->return_json(200,"","更新程序（其它）准备就绪！");
-        }
+        $this->return_json(-2000,"","远程一键更新已移除，请通过 Git 或容器镜像更新。");
     }
     /**
      * 校验更新程序
@@ -2486,7 +2215,7 @@ class Api {
             //获取当前版本信息
             $current_version = explode("-",file_get_contents("version.txt"));
             $current_version = str_replace("v","",$current_version[0]);
-            $db_name = 'onenav_'.date("YmdHi",time()).'_'.$current_version.'.db3';
+            $db_name = 'link_steward_'.date("YmdHi",time()).'_'.$current_version.'.db3';
             $backup_db_path = $backup_dir.$db_name;
             copy('data/onenav.db3',$backup_db_path);
             $this->return_json(200,$db_name,'success');
@@ -2506,6 +2235,16 @@ class Api {
 
         //备份目录
         $backup_dir = 'data/backup/';
+
+        if( !is_dir($backup_dir) ) {
+            $datas = [
+                'code'      =>  0,
+                'msg'       =>  '',
+                'count'     =>  0,
+                'data'      =>  []
+            ];
+            exit(json_encode($datas));
+        }
 
         //遍历备份列表
         $dbs = scandir($backup_dir);
@@ -2573,7 +2312,7 @@ class Api {
         $this->check_is_subscribe();
 
         //使用正则表达式判断数据库名称是否合法
-        $pattern = '/^onenav_[0-9\-]+_[0-9.]+(db3)$/';
+        $pattern = '/^(onenav|link_steward)_[0-9]{12}_[0-9.]+\.db3$/';
 
         if( !preg_match_all($pattern,$name) ) {
             $this->return_json(-2000,'','数据库名称不合法！');
@@ -2603,7 +2342,7 @@ class Api {
         $this->check_is_subscribe();
 
         //使用正则表达式判断数据库名称是否合法
-        $pattern = '/^onenav_[0-9\-]+_[0-9.]+(db3)$/';
+        $pattern = '/^(onenav|link_steward)_[0-9]{12}_[0-9.]+\.db3$/';
 
         if( !preg_match_all($pattern,$name) ) {
             $this->return_json(-2000,'','数据库名称不合法！');
@@ -2652,7 +2391,7 @@ class Api {
         $this->auth($token);
 
         //使用正则表达式判断数据库名称是否合法
-        $pattern = '/^onenav_[0-9\-]+_[0-9.]+(db3)$/';
+        $pattern = '/^(onenav|link_steward)_[0-9]{12}_[0-9.]+\.db3$/';
 
         if( !preg_match_all($pattern,$name) ) {
             $this->return_json(-2000,'','数据库名称不合法！');
@@ -2695,11 +2434,6 @@ class Api {
     public function create_share($data) {
         //验证请求
         $this->auth($token);
-
-        //如果订阅不存在
-        if ( $this->is_subscribe() === FALSE ) {
-            $this->return_json(-2000,'','此功能需要订阅后才能使用！');
-        }
 
         //设置默认数据
         //随机8位分享ID
@@ -3269,9 +3003,6 @@ class Api {
         // 验证授权
         $this->auth($token);
 
-        // 验证订阅
-        $this->check_is_subscribe();
-
         // 从数据库获取API信息
         $api = $this->get_options("ai_setting");
         // 如果查询失败
@@ -3482,22 +3213,8 @@ class Api {
      * name：后端检查验证授权
      */
     public function forward_order(){
-        //验证token是否合法
         $this->auth($token);
-        // 声明一个空数组，作为请求体
-        $data = [];
-        if (!empty($_GET)) {
-            // 使用 http_build_query() 函数生成查询字符串
-            $query_string = http_build_query($_GET);
-            // 向https://onenav.xiaoz.top/v1/check_subscribe.php 发起GET请求，然后返回内容
-            // 拼接完整的 URL
-            $target_url = API_URL . '/v1/check_subscribe.php?' . $query_string;
-            echo curl_get($target_url);
-
-        } else {
-            // 返回错误
-            $this->return_json(-2000,'','参数不能为空！');
-        }
+        $this->return_json(200,['status' => 'local_enabled'],'success');
     }
 
     /**
@@ -3575,19 +3292,8 @@ class Api {
     // 获取相临的版本
     public function getNextVersion(){
         $this->auth($token);
-        // 获取当前版本
-        $version = trim($_GET['version']);
-        // 正则判断版本是否合法，只能是数组或.组成
-        $pattern = "/^[0-9.]+$/";
-        if( !preg_match($pattern,$version) ) {
-            echo "0.0.0";
-            exit;
-        }
-        // 请求：https://onenav.xiaoz.top/v1/get_version.php?version=1.1.1
-        $url = API_URL . '/v1/get_version.php?version=' . $version;
-        // 设置响应头为text类型
         header('Content-Type: text/plain');
-        // 输出结果
-        echo curl_get($url);
+        $current_version = explode("-",file_get_contents("version.txt"));
+        echo str_replace("v","",$current_version[0]);
     }
 }

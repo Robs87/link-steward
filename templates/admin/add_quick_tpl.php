@@ -16,7 +16,7 @@
 	<body>
 		<div class="quick-main">
 			<div class="title">
-				<i class="iconfont icon--_tianjia"></i>快速添加链接到OneNav
+				<i class="layui-icon layui-icon-add-circle"></i>快速添加链接到 Link Steward
 			</div>
 			<form class="layui-form">
 				<div class="list">
@@ -58,12 +58,9 @@
 		</div>
 		
 		<!--JQ-->
-        <script src="https://libs.xiaoz.top/jquery/2.2.4/jquery.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="static/js/jquery.min.js" type="text/javascript" charset="utf-8"></script>
         <!--Layui-->
-		<script src="https://libs.xiaoz.top/layui/v2.5.4/layui.js" type="text/javascript" charset="utf-8"></script>
-		<!--iconfont-->
-		<link rel="stylesheet" type="text/css" href="//at.alicdn.com/t/font_2474757_xsupv5wqpn.css" />
-		<script src="//at.alicdn.com/t/font_2474757_xsupv5wqpn.js" type="text/javascript" charset="utf-8"></script>
+		<script src="static/layui/layui.js" type="text/javascript" charset="utf-8"></script>
 		<!--admin-->
 		<!--js-->
 		<script>

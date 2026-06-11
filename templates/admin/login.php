@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="./templates/admin/static/css/new.css?v=<?php echo $version; ?>">
   <link rel='stylesheet' href='static/layui/css/layui.css'>
   <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
-  <title>OneNav管理员登录</title>
+  <title>Link Steward 管理员登录</title>
   <script>
     window.onload = function () {
       document.querySelector(".login").style.opacity = 1;
@@ -23,7 +23,7 @@
     </section>
     <section class="right">
       <!-- PC版的样式 -->
-      <h2>OneNav后台管理系统</h2>
+      <h2>Link Steward 后台管理系统</h2>
       <div class="login_frame">
         <div class="login_box">
           <h4>管理登录</h4>
@@ -41,14 +41,13 @@
               <input type="submit" lay-submit lay-filter="new_login" class="submit" value="登录">
             </div>
           </form>
-          <div class = "forgot_pass"> <a href="https://dwz.ovh/isbyv" target = "_blank" rel = "nofollow">忘记密码？</a> </div>
         </div>
       </div>
     </section>
   </div>
   <div class="mobile">
     <!-- 手机版的样式 -->
-    <h1>OneNav</h1>
+    <h1>Link Steward</h1>
     <form action="" method="post">
       <div class="inp">
         <span class="label">用户名</span>
@@ -62,9 +61,8 @@
         <input type="submit" lay-submit lay-filter="new_mobile_login" class="submit" value="登录">
       </div>
     </form>
-    <div style = "padding-left:30px;"> <a style="color:#FFFFFF;" href="https://dwz.ovh/isbyv" target = "_blank" rel = "nofollow">忘记密码？</a> </div>
   </div>
-  <footer>© 2025 Powered by <a style = "color:#FFFFFF;padding-left:6px;" href = "https://www.onenav.top/" target = "_blank" title = "开源免费书签管理系统"> OneNav</a></footer>
+  <footer>© 2025 Link Steward</footer>
 </body>
 <script>
   //自己封装的弹出框

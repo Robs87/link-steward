@@ -8,7 +8,7 @@
     <!-- 说明提示框 -->
     <div class="layui-col-lg12">
       <div class="setting-msg">
-      站点设置使用说明，请参考：<a href="https://dwz.ovh/un5rz" target = "_blank" title = "站点设置使用说明">https://dwz.ovh/un5rz</a>
+      站点设置会写入本地配置数据库；自定义 header/footer 已在 Link Steward 中开放使用。
       </div>
     </div>
     <!-- 说明提示框END -->
@@ -82,7 +82,7 @@
         </div>
 
         <div class="layui-form-item layui-form-text">
-            <label class="layui-form-label">自定义footer(支持HTML代码，订阅可用)</label>
+            <label class="layui-form-label">自定义footer(支持HTML代码)</label>
             <div class="layui-input-block">
                 <textarea name = "custom_footer" placeholder="自定义站点底部信息，请填写HTML代码" class="layui-textarea"><?php echo $site['custom_footer']; ?></textarea>
             </div>

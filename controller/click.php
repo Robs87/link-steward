@@ -95,7 +95,7 @@ elseif( is_login() ) {
 //其它情况则没有权限
 else{
     $msg = '<p>很抱歉，该页面是私有的，您无权限访问此页面。</p>
-    <p>如果您是管理员，请尝试登录OneNav后台并重新访问。</p>';
+    <p>如果您是管理员，请尝试登录 Link Steward 后台并重新访问。</p>';
     require('templates/admin/403.php');
     exit();
 }

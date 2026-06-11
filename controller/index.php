@@ -336,7 +336,7 @@ if( $info_json ) {
         //如果主程序不满足主题要求
         if( new_get_version() <  $min_version ) {
             $onenav_version = new_get_version();
-            exit($template."主题要求最低OneNav版本为：".$min_version."，您当前OneNav版本为：".$onenav_version."，请先<a title = 'OneNav升级说明' href = 'https://dwz.ovh/br5wt' target = '_blank'>升级OneNav版本！</a>");
+            exit($template."主题要求最低 Link Steward 版本为：".$min_version."，您当前版本为：".$onenav_version."，请升级后再使用该主题。");
         }
     }
 }

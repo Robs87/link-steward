@@ -2,7 +2,7 @@
 <html lang="zh-cn" xmlns="http://www.w3.org/1999/xhtml">
 <head>
 	<meta charset="utf-8" />
-	<title>OneNav后台登录</title>
+	<title>Link Steward 后台登录</title>
 	<meta name="generator" content="EverEdit" />
 	<meta name="author" content="" />
 	<meta name="keywords" content="" />
@@ -24,7 +24,7 @@
 <div class="layui-container">
 	<div class="layui-row">
 		<div class="login-logo">
-			<h1>登录OneNav</h1>
+			<h1>登录 Link Steward</h1>
 		</div>
 		<div class="layui-col-lg4 layui-col-md-offset4" style ="margin-top:4em;">
 		<form class="layui-form layui-form-pane" action="">

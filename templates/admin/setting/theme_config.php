@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <title>OneNav后台管理</title>
+  <title>Link Steward 后台管理</title>
   <link rel='stylesheet' href='static/layui/css/layui.css'>
   <link rel='stylesheet' href='templates/admin/static/style.css?v=v0.9.17-20220314'>
 </head>
@@ -12,7 +12,7 @@
         <!-- 说明提示框 -->
     <div class="layui-col-lg12">
       <div class="setting-msg">
-      主题自定义参数设置，请参考：<a href="https://dwz.ovh/gnae4" target = "_blank" title = "主题参数设置说明">https://dwz.ovh/gnae4</a>，如果您不清楚，请勿修改。
+      主题自定义参数会直接写入本地配置；如果您不清楚参数含义，请勿修改。
       </div>
     </div>
     <!-- 说明提示框END -->

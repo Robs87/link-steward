@@ -2,7 +2,7 @@
 <html lang="zh-cn" xmlns="http://www.w3.org/1999/xhtml">
 <head>
 	<meta charset="utf-8" />
-	<title>初始化OneNav用户名/密码</title>
+	<title>初始化 Link Steward 用户名/密码</title>
 	<meta name="generator" content="EverEdit" />
 	<meta name="author" content="" />
 	<meta name="keywords" content="" />
@@ -41,7 +41,7 @@
 			<!-- star box -->
 			<div class="box">
 			<div class="box-title">
-				<h2>初始化OneNav</h2>
+				<h2>初始化 Link Steward</h2>
 			</div>
 			<form class="layui-form layui-form-pane" action="">
 				<div class="layui-form-item">

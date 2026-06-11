@@ -7,7 +7,7 @@
   <!-- 说明提示框 -->
   <div class="layui-col-lg12">
       <div class="setting-msg">
-        <p>1. 关于字体图标的说明请参考帮助文档：<a href="https://dwz.ovh/7nr1f" target = "_blank" title = "字体图标使用说明">https://dwz.ovh/7nr1f</a></p>
+        <p>1. 字体图标可填写 Font Awesome 类名，例如 <code>fa fa-star</code>。</p>
         <p>2. 权重越大，排序越靠前</p>
       </div>
     </div>
