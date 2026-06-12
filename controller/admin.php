@@ -100,6 +100,21 @@ if ( $page == 'add_category' ) {
 if( $page == 'setting/api' ) {
     //查询SecretKey
     $SecretKey = $db->get('on_options','*',[ 'key'  =>  'SecretKey' ])['value'];
+    $ai_setting = $db->get('on_options','value',[ 'key'  =>  'ai_setting' ]);
+    $ai_setting = json_decode($ai_setting, true);
+    $default_ai_setting = [
+        'status' => 'off',
+        'url' => '',
+        'sk' => '',
+        'model' => '',
+        'custom_model' => ''
+    ];
+    if( empty($ai_setting) || !is_array($ai_setting) ) {
+        $ai_setting = $default_ai_setting;
+    }
+    else{
+        $ai_setting = array_merge($default_ai_setting,$ai_setting);
+    }
     
 }
 

@@ -3007,21 +3007,28 @@ class Api {
         $api = $this->get_options("ai_setting");
         // 如果查询失败
         if( !$api ) {
-            $this->return_json(-2000,'','获取参数失败！');
+            $this->return_json(-2000,'','请先在后台 API 设置中配置 AI 能力！');
         }
         // 如果没有启用
-        if( $api->status === 'off' ) {
+        if( ($api->status === 'off') || empty($api->status) ) {
             $this->return_json(-2000,'','AI功能未启用！');
         }
         // 查询到了结果
-        $url = $api->url;
-        $key = $api->sk;
-        $model = $api->model;
+        $url = empty($api->url) ? '' : trim($api->url);
+        $key = empty($api->sk) ? '' : trim($api->sk);
+        $model = empty($api->model) ? '' : trim($api->model);
         // 如果model = custom，则使用自定义模型
         if( $model === 'custom' ) {
-            $model = $api->custom_model;
+            $model = empty($api->custom_model) ? '' : trim($api->custom_model);
         }
 
+        if( empty($url) || empty($key) || empty($model) ) {
+            $this->return_json(-2000,'','AI API 地址、密钥或模型未配置完整！');
+        }
+
+        if( !filter_var($url, FILTER_VALIDATE_URL) ) {
+            $this->return_json(-2000,'','AI API 地址不合法！');
+        }
 
         while (ob_get_level()) {
             ob_end_flush();
@@ -3037,8 +3044,22 @@ class Api {
         
 
         // 获取用户输入
-        $content = $_POST['content'];
+        $content = empty($_POST['content']) ? '' : trim($_POST['content']);
         $feature = empty($_POST['feature']) ? 'search' : $_POST['feature'];
+
+        if( !in_array($feature, ['search','translation']) ) {
+            $feature = 'search';
+        }
+
+        if( empty($content) ) {
+            echo "data: " . json_encode([
+                "choices" => [[
+                    "delta" => ["content" => "请输入需要处理的内容。"]
+                ]]
+            ], JSON_UNESCAPED_UNICODE) . "\n\n";
+            echo "data: [DONE]\n\n";
+            return;
+        }
 
         // 查询出所有链接，只需要url, title, description, url_standby字段
         $links = $this->db->select('on_links', ['url', 'title', 'description']);
@@ -3058,7 +3079,7 @@ class Api {
             }
 
             // 将数据转换为JSON格式
-            $bookmarks = json_encode($bookmarks);
+            $bookmarks = json_encode($bookmarks, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
             // 创建AI请求的消息内容
             $messages = [
@@ -3167,7 +3188,17 @@ class Api {
         });
 
         // 执行 cURL 请求
-        curl_exec($ch);
+        $curl_result = curl_exec($ch);
+        if( $curl_result === false ) {
+            $error = curl_error($ch);
+            echo "data: " . json_encode([
+                "choices" => [[
+                    "delta" => ["content" => "AI 请求失败：" . $error]
+                ]]
+            ], JSON_UNESCAPED_UNICODE) . "\n\n";
+            echo "data: [DONE]\n\n";
+            flush();
+        }
 
         // 关闭 cURL 会话
         curl_close($ch);

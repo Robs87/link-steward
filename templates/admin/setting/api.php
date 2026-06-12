@@ -9,6 +9,7 @@
     <div class="layui-col-lg12">
       <div class="setting-msg">
         API Token 可用于浏览器扩展或自动化脚本。鉴权方式：请求参数 <code>token=md5(USER + SecretKey)</code> 或请求头 <code>X-Token</code>。
+        AI 检索会把当前书签标题、URL、描述和您的提问发送到所配置的 OpenAI 兼容接口，请按自己的隐私策略选择服务商。
       </div>
     </div>
     <!-- 说明提示框END -->
@@ -50,6 +51,70 @@
             <button class="layui-btn" lay-submit="" lay-filter="change_sk">更换SecretKey</button>
             <button class="layui-btn" lay-submit="" lay-filter="cal_token">计算Token</button>
             <button class="layui-btn" lay-submit="" lay-filter="one_copy" title="一键复制API域名和Token">一键复制</button>
+        </div>
+
+    </form>
+    </div>
+    <div class="layui-col-lg6">
+    <form class="layui-form layui-form-pane" action="">
+
+        <div class="layui-form-item">
+            <label class="layui-form-label" style="width:130px;">AI状态</label>
+            <div class="layui-input-inline">
+                <input type="radio" name="status" value="on" title="启用" <?php echo ($ai_setting['status'] === 'on') ? 'checked' : ''; ?>>
+                <input type="radio" name="status" value="off" title="关闭" <?php echo ($ai_setting['status'] !== 'on') ? 'checked' : ''; ?>>
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <label class="layui-form-label" style="width:130px;">AI API地址</label>
+            <div class="layui-input-inline">
+                <input style="width:400px;" type="text" name="url" value="<?php echo htmlspecialchars($ai_setting['url']); ?>" autocomplete="off" placeholder="https://api.openai.com/v1/chat/completions" class="layui-input">
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <label class="layui-form-label" style="width:130px;">AI API密钥</label>
+            <div class="layui-input-inline">
+                <input style="width:400px;" type="password" name="sk" value="<?php echo htmlspecialchars($ai_setting['sk']); ?>" autocomplete="off" placeholder="sk-..." class="layui-input">
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <label class="layui-form-label" style="width:130px;">模型</label>
+            <div class="layui-input-inline">
+                <select name="model" lay-filter="ai_model" id="ai_model" lay-search>
+                    <option value="">请选择模型</option>
+                    <?php
+                    $models = [
+                        'gpt-4o' => 'gpt-4o',
+                        'gpt-4o-mini' => 'gpt-4o-mini',
+                        'deepseek-chat' => 'deepseek-chat',
+                        'qwen-plus' => 'qwen-plus',
+                        'qwen-turbo' => 'qwen-turbo',
+                        'glm-4-air' => 'glm-4-air',
+                        'deepseek-ai/DeepSeek-V3' => 'DeepSeek-V3（硅基流动）',
+                        'Qwen/Qwen2.5-72B-Instruct' => 'Qwen2.5-72B（硅基流动）',
+                        'custom' => '自定义模型'
+                    ];
+                    foreach($models as $value => $label) {
+                        $selected = ($ai_setting['model'] === $value) ? 'selected' : '';
+                        echo '<option value="'.htmlspecialchars($value).'" '.$selected.'>'.htmlspecialchars($label).'</option>';
+                    }
+                    ?>
+                </select>
+            </div>
+        </div>
+
+        <div class="layui-form-item" id="custom_model_item" style="<?php echo ($ai_setting['model'] === 'custom') ? '' : 'display:none;'; ?>">
+            <label class="layui-form-label" style="width:130px;">自定义模型</label>
+            <div class="layui-input-inline">
+                <input style="width:400px;" type="text" name="custom_model" value="<?php echo htmlspecialchars($ai_setting['custom_model']); ?>" autocomplete="off" placeholder="例如 doubao-1-5-pro-32k-250115" class="layui-input">
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <button class="layui-btn layui-btn-normal" lay-submit="" lay-filter="set_ai_setting">保存AI设置</button>
         </div>
 
     </form>

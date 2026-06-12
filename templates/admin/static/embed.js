@@ -880,6 +880,30 @@ layui.use(['element','table','layer','form','upload','iconHhysFa'], function(){
     return false; //阻止表单跳转。如果需要表单跳转，去掉这段即可。
   });
 
+  form.on('select(ai_model)', function(data){
+    if( data.value == 'custom' ) {
+      $("#custom_model_item").show();
+    }
+    else {
+      $("#custom_model_item").hide();
+    }
+  });
+
+  form.on('submit(set_ai_setting)', function(data){
+    $.post('/index.php?c=api&method=set_ai_setting',data.field,function(data,status){
+      if(data.code == 0) {
+        layer.msg(data.data, {icon: 1});
+      }
+      else{
+        layer.msg(data.msg || data.err_msg || '保存失败！', {icon: 5});
+      }
+    }).error(function(){
+      layer.msg('请求失败，请稍后重试！', {icon: 5});
+    });
+
+    return false;
+  });
+
   //添加链接
   form.on('submit(add_link)', function(data){
     $.post('/index.php?c=api&method=add_link',data.field,function(data,status){

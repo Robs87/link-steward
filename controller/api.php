@@ -356,6 +356,39 @@ function set_site($api) {
     $api->set_option('s_site',$value);
 }
 
+// 设置 AI 能力
+function set_ai_setting($api) {
+    $data['status'] = empty($_POST['status']) ? 'off' : htmlspecialchars(trim($_POST['status']));
+    $data['url'] = empty($_POST['url']) ? '' : trim($_POST['url']);
+    $data['sk'] = empty($_POST['sk']) ? '' : trim($_POST['sk']);
+    $data['model'] = empty($_POST['model']) ? '' : htmlspecialchars(trim($_POST['model']));
+    $data['custom_model'] = empty($_POST['custom_model']) ? '' : htmlspecialchars(trim($_POST['custom_model']));
+
+    if( !in_array($data['status'], ['on','off']) ) {
+        $data['status'] = 'off';
+    }
+
+    if( $data['status'] === 'on' ) {
+        if( empty($data['url']) || !filter_var($data['url'], FILTER_VALIDATE_URL) ) {
+            $api->return_json(-2000,'','请填写正确的 AI API 地址！');
+        }
+
+        if( empty($data['sk']) ) {
+            $api->return_json(-2000,'','请填写 AI API 密钥！');
+        }
+
+        if( empty($data['model']) ) {
+            $api->return_json(-2000,'','请选择 AI 模型！');
+        }
+
+        if( ($data['model'] === 'custom') && empty($data['custom_model']) ) {
+            $api->return_json(-2000,'','请填写自定义模型名称！');
+        }
+    }
+
+    $api->set_option('ai_setting',json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+}
+
 // 开源版不再按远程订阅限制本地功能。
 function _deny_set($content,$err_msg) {
     return TRUE;
