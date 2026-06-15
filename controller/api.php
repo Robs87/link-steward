@@ -236,6 +236,20 @@ function get_link_info($api) {
 }
 
 /**
+ * AI 链接补全建议
+ */
+function ai_link_suggest($api) {
+    $token = empty( $_POST['token'] ) ? $_GET['token'] : $_POST['token'];
+    $data = [
+        'url' => empty($_POST['url']) ? '' : trim($_POST['url']),
+        'title' => empty($_POST['title']) ? '' : trim($_POST['title']),
+        'description' => empty($_POST['description']) ? '' : trim($_POST['description']),
+        'fid' => empty($_POST['fid']) ? 0 : intval($_POST['fid'])
+    ];
+    $api->ai_link_suggest($token,$data);
+}
+
+/**
  * 根据ID获取单个分类信息
  */
 function get_a_category($api) {

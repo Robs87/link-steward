@@ -5,6 +5,7 @@ import {
   listLinks,
   saveSettings,
   statusText,
+  suggestLink,
   testConnection
 } from "./onenav-api.js";
 
@@ -28,6 +29,7 @@ const els = {
   titleInput: document.querySelector("#titleInput"),
   descriptionInput: document.querySelector("#descriptionInput"),
   categorySelect: document.querySelector("#categorySelect"),
+  aiSuggest: document.querySelector("#aiSuggest"),
   recentLinks: document.querySelector("#recentLinks"),
   settingsForm: document.querySelector("#settingsForm"),
   apiBaseInput: document.querySelector("#apiBaseInput"),
@@ -78,6 +80,7 @@ function bindEvents() {
     });
   });
   els.addForm.addEventListener("submit", handleAdd);
+  els.aiSuggest.addEventListener("click", handleAiSuggest);
 
   els.settingsForm.addEventListener("submit", handleSaveSettings);
   els.testSettings.addEventListener("click", handleTestSettings);
@@ -233,6 +236,46 @@ async function handleAdd(event) {
     await loadRecent();
   } catch (error) {
     showToast(statusText(error), "error");
+  }
+}
+
+async function handleAiSuggest() {
+  const url = els.urlInput.value.trim();
+  if (!url) {
+    showToast("请先填写 URL", "error");
+    return;
+  }
+
+  const originalText = els.aiSuggest.textContent;
+  els.aiSuggest.disabled = true;
+  els.aiSuggest.textContent = "AI补全中...";
+  try {
+    const suggestion = await suggestLink({
+      title: els.titleInput.value.trim(),
+      url,
+      description: els.descriptionInput.value.trim(),
+      categoryId: els.categorySelect.value
+    });
+
+    if (suggestion.title) els.titleInput.value = suggestion.title;
+    if (suggestion.enhanced_description) {
+      els.descriptionInput.value = suggestion.enhanced_description;
+    } else if (suggestion.description) {
+      els.descriptionInput.value = suggestion.description;
+    }
+    if (suggestion.category_id) {
+      const categoryId = String(suggestion.category_id);
+      if ([...els.categorySelect.options].some((option) => option.value === categoryId)) {
+        els.categorySelect.value = categoryId;
+      }
+    }
+
+    showToast(suggestion.reason ? `AI补全完成：${suggestion.reason}` : "AI补全完成");
+  } catch (error) {
+    showToast(statusText(error), "error");
+  } finally {
+    els.aiSuggest.disabled = false;
+    els.aiSuggest.textContent = originalText;
   }
 }
 

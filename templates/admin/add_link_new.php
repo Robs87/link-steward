@@ -60,7 +60,7 @@
   <div class="layui-form-item">
     <label class="layui-form-label">所属分类</label>
     <div class="layui-input-block">
-      <select name="fid" lay-verify="required" lay-search>
+      <select name="fid" id="fid" lay-verify="required" lay-search>
         <option value=""></option>
         <?php foreach ($categorys as $category) {
           # code...
@@ -96,6 +96,7 @@
       <button class="layui-btn" id = "add_link" lay-submit lay-filter="add_link">添加</button>
       <!-- <button class="layui-btn" lay-submit lay-filter="get_link_info">识别</button> -->
       <a href="javascript:;" class="layui-btn" onclick="get_link_info()">识别</a>
+      <a href="javascript:;" class="layui-btn layui-btn-normal" onclick="ai_link_suggest()">AI补全</a>
       <button type="reset" class="layui-btn layui-btn-primary">重置</button>
   </div>
 </form>

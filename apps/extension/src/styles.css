@@ -223,7 +223,8 @@ textarea:focus {
   flex-wrap: wrap;
 }
 
-.button-row button {
+.button-row button,
+.ai-actions button {
   min-width: 92px;
   height: 34px;
   border: 0;
@@ -239,6 +240,19 @@ textarea:focus {
 
 .secondary {
   background: #8e949d;
+}
+
+.ai-actions {
+  margin: -4px 0 16px;
+}
+
+.ai-actions button {
+  width: 100%;
+}
+
+.ai-actions button:disabled {
+  cursor: wait;
+  opacity: .72;
 }
 
 .settings-actions {

@@ -1071,6 +1071,52 @@ function get_link_info() {
     });
 }
 
+function ai_link_suggest() {
+    var url = $("#url").val();
+    if( !url ) {
+      layer.msg("请先填写URL！", {icon: 5});
+      return;
+    }
+
+    var payload = {
+      url: url,
+      title: $("#title").val(),
+      description: $("#description").val(),
+      fid: $("#fid").val()
+    };
+    var index = layer.load(1);
+    $.post('/index.php?c=api&method=ai_link_suggest',payload,function(data,status){
+      layer.close(index);
+      if(data.code == 0) {
+        var suggestion = data.data || {};
+        if(suggestion.title) {
+          $("#title").val(suggestion.title);
+        }
+        if(suggestion.enhanced_description) {
+          $("#description").val(suggestion.enhanced_description);
+        }
+        else if(suggestion.description) {
+          $("#description").val(suggestion.description);
+        }
+        if(suggestion.category_id) {
+          $("#fid").val(String(suggestion.category_id));
+          layui.use('form', function(){
+            layui.form.render('select');
+          });
+        }
+
+        var message = suggestion.reason ? "AI补全完成：" + suggestion.reason : "AI补全完成！";
+        layer.msg(message, {icon: 1, time: 3000});
+      }
+      else{
+        layer.msg(data.err_msg || data.msg || "AI补全失败！", {icon: 5});
+      }
+    }).error(function(){
+      layer.close(index);
+      layer.msg("AI补全请求失败！", {icon: 5});
+    });
+}
+
 function  timestampToTime(timestamp) {
     // 将时间戳转换为毫秒
     let timestampInMilliseconds = timestamp * 1000;

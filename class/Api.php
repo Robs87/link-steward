@@ -3205,6 +3205,188 @@ class Api {
     }
 
     /**
+     * AI 链接补全：标题、描述、分类和标签建议。
+     */
+    public function ai_link_suggest($token,$data) {
+        $this->auth($token);
+
+        $url = empty($data['url']) ? '' : trim($data['url']);
+        if( empty($url) ) {
+            $this->return_json(-2000,'','URL不能为空！');
+        }
+
+        if( !filter_var($url, FILTER_VALIDATE_URL) || !preg_match("/^https?:\/\//i", $url) ) {
+            $this->return_json(-2000,'','只支持 http/https 链接！');
+        }
+
+        $ai = $this->get_ai_setting();
+        $title = empty($data['title']) ? '' : trim($data['title']);
+        $description = empty($data['description']) ? '' : trim($data['description']);
+        $fid = empty($data['fid']) ? 0 : intval($data['fid']);
+
+        $categories = $this->db->select('on_categorys', ['id','fid','name','description'], [
+            'ORDER' => ['fid' => 'ASC','weight' => 'DESC','id' => 'ASC']
+        ]);
+        $category_prompt_data = [];
+        $valid_category_ids = [];
+        foreach($categories as $category) {
+            $category_id = intval($category['id']);
+            $valid_category_ids[] = $category_id;
+            $category_prompt_data[] = [
+                'id' => $category_id,
+                'parent_id' => intval($category['fid']),
+                'name' => html_entity_decode($category['name'], ENT_QUOTES | ENT_HTML5, 'UTF-8'),
+                'description' => html_entity_decode($category['description'], ENT_QUOTES | ENT_HTML5, 'UTF-8')
+            ];
+        }
+
+        $messages = [
+            [
+                'role' => 'system',
+                'content' => '你是 Link Steward 的书签整理助手。请根据 URL、已有标题、已有描述和分类列表，生成可直接保存的书签元数据。只返回 JSON，不要使用 Markdown，不要添加解释。JSON 字段必须包含 title、description、category_id、tags、reason。description 用中文，尽量 40 到 90 字；tags 返回 3 到 6 个中文短标签；category_id 必须来自分类列表 id，无法判断时返回空字符串。'
+            ],
+            [
+                'role' => 'user',
+                'content' => json_encode([
+                    'url' => $url,
+                    'current_title' => $title,
+                    'current_description' => $description,
+                    'current_category_id' => $fid,
+                    'categories' => $category_prompt_data
+                ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+            ]
+        ];
+
+        $result = $this->call_ai_chat_completion($ai,$messages,0.2,0.8,false);
+        $suggestion = $this->decode_ai_json_object($result);
+        if( empty($suggestion) ) {
+            $this->return_json(-2000,'','AI 返回内容无法解析，请重试或更换模型。');
+        }
+
+        $suggested_category_id = empty($suggestion['category_id']) ? '' : intval($suggestion['category_id']);
+        if( !empty($suggested_category_id) && !in_array($suggested_category_id,$valid_category_ids) ) {
+            $suggested_category_id = '';
+        }
+
+        $tags = empty($suggestion['tags']) || !is_array($suggestion['tags']) ? [] : array_values(array_filter(array_map(function($tag){
+            return trim(strval($tag));
+        },$suggestion['tags'])));
+        $tags = array_slice($tags,0,6);
+
+        $clean_description = isset($suggestion['description']) ? trim(strval($suggestion['description'])) : '';
+        $enhanced_description = $clean_description;
+        if( !empty($tags) ) {
+            $tag_text = "关键词：" . implode('、',$tags);
+            $enhanced_description = empty($enhanced_description) ? $tag_text : $enhanced_description . "\n\n" . $tag_text;
+        }
+
+        $this->return_json(0,[
+            'title' => isset($suggestion['title']) ? trim(strval($suggestion['title'])) : $title,
+            'description' => $clean_description,
+            'enhanced_description' => $enhanced_description,
+            'category_id' => $suggested_category_id,
+            'tags' => $tags,
+            'reason' => isset($suggestion['reason']) ? trim(strval($suggestion['reason'])) : ''
+        ],'success');
+    }
+
+    private function get_ai_setting() {
+        $api = $this->get_options("ai_setting");
+        if( !$api ) {
+            $this->return_json(-2000,'','请先在后台 API 设置中配置 AI 能力！');
+        }
+
+        if( ($api->status === 'off') || empty($api->status) ) {
+            $this->return_json(-2000,'','AI功能未启用！');
+        }
+
+        $url = empty($api->url) ? '' : trim($api->url);
+        $key = empty($api->sk) ? '' : trim($api->sk);
+        $model = empty($api->model) ? '' : trim($api->model);
+        if( $model === 'custom' ) {
+            $model = empty($api->custom_model) ? '' : trim($api->custom_model);
+        }
+
+        if( empty($url) || empty($key) || empty($model) ) {
+            $this->return_json(-2000,'','AI API 地址、密钥或模型未配置完整！');
+        }
+
+        if( !filter_var($url, FILTER_VALIDATE_URL) ) {
+            $this->return_json(-2000,'','AI API 地址不合法！');
+        }
+
+        return [
+            'url' => $url,
+            'key' => $key,
+            'model' => $model
+        ];
+    }
+
+    private function call_ai_chat_completion($ai,$messages,$temperature = 0.2,$top_p = 0.8,$stream = false) {
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $ai['url']);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HEADER, false);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            "Authorization: Bearer " . $ai['key'],
+            "Content-Type: application/json"
+        ]);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 60);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+            "model" => $ai['model'],
+            "temperature" => $temperature,
+            "top_p" => $top_p,
+            "messages" => $messages,
+            "stream" => $stream
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+
+        $response = curl_exec($ch);
+        if( $response === false ) {
+            $error = curl_error($ch);
+            curl_close($ch);
+            $this->return_json(-2000,'','AI 请求失败：'.$error);
+        }
+
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        if( $http_code < 200 || $http_code >= 300 ) {
+            $this->return_json(-2000,'','AI 服务返回异常状态码：'.$http_code);
+        }
+
+        $body = json_decode($response,true);
+        if( empty($body) || empty($body['choices'][0]['message']['content']) ) {
+            $this->return_json(-2000,'','AI 服务返回内容为空或格式不兼容。');
+        }
+
+        return trim($body['choices'][0]['message']['content']);
+    }
+
+    private function decode_ai_json_object($content) {
+        $content = trim($content);
+        if( preg_match('/^```(?:json)?\s*(.*?)\s*```$/is',$content,$matches) ) {
+            $content = trim($matches[1]);
+        }
+
+        $decoded = json_decode($content,true);
+        if( is_array($decoded) ) {
+            return $decoded;
+        }
+
+        $start = strpos($content,'{');
+        $end = strrpos($content,'}');
+        if( $start === false || $end === false || $end <= $start ) {
+            return [];
+        }
+
+        $json = substr($content,$start,$end - $start + 1);
+        $decoded = json_decode($json,true);
+        return is_array($decoded) ? $decoded : [];
+    }
+
+    /**
      * name:内部获取设置选项
      */
     private function get_options($key) {

@@ -67,6 +67,17 @@ export async function addLink({ title, url, description = "", categoryId, isPriv
   return body;
 }
 
+export async function suggestLink({ title = "", url, description = "", categoryId = "" }) {
+  const settings = await getSettings();
+  const body = await request(settings, "ai_link_suggest", {
+    url,
+    title,
+    description,
+    fid: categoryId
+  });
+  return body.data || {};
+}
+
 export async function testConnection(settingsInput) {
   const settings = {
     ...(await getSettings()),
