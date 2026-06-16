@@ -474,7 +474,7 @@ function set_ai_setting($api) {
 
 // 测试 AI 配置连通性
 function test_ai_setting($api) {
-    $token = empty( $_POST['token'] ) ? $_GET['token'] : $_POST['token'];
+    $token = empty( $_POST['token'] ) ? (empty($_GET['token']) ? '' : $_GET['token']) : $_POST['token'];
     $data = normalize_ai_provider_from_post($_POST,0);
     $api->test_ai_setting($token,$data);
 }
