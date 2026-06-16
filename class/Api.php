@@ -3003,32 +3003,10 @@ class Api {
         // 验证授权
         $this->auth($token);
 
-        // 从数据库获取API信息
-        $api = $this->get_options("ai_setting");
-        // 如果查询失败
-        if( !$api ) {
-            $this->return_json(-2000,'','请先在后台 API 设置中配置 AI 能力！');
-        }
-        // 如果没有启用
-        if( ($api->status === 'off') || empty($api->status) ) {
-            $this->return_json(-2000,'','AI功能未启用！');
-        }
-        // 查询到了结果
-        $url = empty($api->url) ? '' : trim($api->url);
-        $key = empty($api->sk) ? '' : trim($api->sk);
-        $model = empty($api->model) ? '' : trim($api->model);
-        // 如果model = custom，则使用自定义模型
-        if( $model === 'custom' ) {
-            $model = empty($api->custom_model) ? '' : trim($api->custom_model);
-        }
-
-        if( empty($url) || empty($key) || empty($model) ) {
-            $this->return_json(-2000,'','AI API 地址、密钥或模型未配置完整！');
-        }
-
-        if( !filter_var($url, FILTER_VALIDATE_URL) ) {
-            $this->return_json(-2000,'','AI API 地址不合法！');
-        }
+        $ai = $this->get_ai_setting();
+        $url = $ai['url'];
+        $key = $ai['key'];
+        $model = $ai['model'];
 
         while (ob_get_level()) {
             ob_end_flush();
@@ -3309,6 +3287,7 @@ class Api {
 
         $content = $this->call_ai_chat_completion($ai,$messages,0,1,false);
         $this->return_json(0,[
+            'provider' => $ai['name'],
             'model' => $ai['model'],
             'reply' => mb_substr($content,0,120,'UTF-8')
         ],'AI连接测试成功！');
@@ -3328,7 +3307,50 @@ class Api {
     }
 
     private function normalize_ai_setting($api) {
+        $api = $this->normalize_ai_setting_source($api);
+        $active_provider = $this->get_ai_active_provider($api);
+        return $this->normalize_ai_provider($active_provider);
+    }
+
+    private function normalize_ai_setting_source($api) {
+        if( is_array($api) ) {
+            return $api;
+        }
+
+        if( is_object($api) ) {
+            return json_decode(json_encode($api),true);
+        }
+
+        return [];
+    }
+
+    private function get_ai_active_provider($api) {
+        if( !empty($api['providers']) && is_array($api['providers']) ) {
+            $active_provider_id = empty($api['active_provider']) ? '' : trim($api['active_provider']);
+            $first_provider = [];
+            foreach($api['providers'] as $provider) {
+                if( !is_array($provider) ) {
+                    continue;
+                }
+                if( empty($first_provider) ) {
+                    $first_provider = $provider;
+                }
+                if( !empty($active_provider_id) && !empty($provider['id']) && $provider['id'] === $active_provider_id ) {
+                    return $provider;
+                }
+            }
+
+            if( !empty($first_provider) ) {
+                return $first_provider;
+            }
+        }
+
+        return $api;
+    }
+
+    private function normalize_ai_provider($api) {
         $is_array = is_array($api);
+        $name = $is_array ? (empty($api['name']) ? 'AI Provider' : trim($api['name'])) : (empty($api->name) ? 'AI Provider' : trim($api->name));
         $url = $is_array ? (empty($api['url']) ? '' : trim($api['url'])) : (empty($api->url) ? '' : trim($api->url));
         $key = $is_array ? (empty($api['sk']) ? '' : trim($api['sk'])) : (empty($api->sk) ? '' : trim($api->sk));
         $model = $is_array ? (empty($api['model']) ? '' : trim($api['model'])) : (empty($api->model) ? '' : trim($api->model));
@@ -3346,11 +3368,23 @@ class Api {
             $this->return_json(-2000,'','AI API 地址不合法！');
         }
 
+        $url = $this->normalize_ai_chat_url($url);
+
         return [
+            'name' => $name,
             'url' => $url,
             'key' => $key,
             'model' => $model
         ];
+    }
+
+    private function normalize_ai_chat_url($url) {
+        $url = rtrim(trim($url),'/');
+        if( preg_match('/\/chat\/completions$/i',$url) ) {
+            return $url;
+        }
+
+        return $url . '/chat/completions';
     }
 
     private function call_ai_chat_completion($ai,$messages,$temperature = 0.2,$top_p = 0.8,$stream = false) {

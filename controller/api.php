@@ -370,35 +370,104 @@ function set_site($api) {
     $api->set_option('s_site',$value);
 }
 
+function normalize_ai_provider_from_post($provider,$index) {
+    if( !is_array($provider) ) {
+        $provider = [];
+    }
+
+    $id = empty($provider['id']) ? 'provider_' . ($index + 1) : preg_replace('/[^a-zA-Z0-9_\-]/','',trim($provider['id']));
+    if( empty($id) ) {
+        $id = 'provider_' . ($index + 1);
+    }
+
+    return [
+        'id' => $id,
+        'name' => empty($provider['name']) ? 'Provider ' . ($index + 1) : htmlspecialchars(trim($provider['name'])),
+        'description' => empty($provider['description']) ? '' : htmlspecialchars(trim($provider['description'])),
+        'url' => empty($provider['url']) ? '' : trim($provider['url']),
+        'sk' => empty($provider['sk']) ? '' : trim($provider['sk']),
+        'model' => empty($provider['model']) ? '' : htmlspecialchars(trim($provider['model'])),
+        'custom_model' => empty($provider['custom_model']) ? '' : htmlspecialchars(trim($provider['custom_model']))
+    ];
+}
+
+function validate_ai_provider($api,$provider,$prefix = 'AI') {
+    if( empty($provider['url']) || !filter_var($provider['url'], FILTER_VALIDATE_URL) ) {
+        $api->return_json(-2000,'',$prefix . ' API 地址不正确！');
+    }
+
+    if( empty($provider['sk']) ) {
+        $api->return_json(-2000,'',$prefix . ' API 密钥不能为空！');
+    }
+
+    if( empty($provider['model']) ) {
+        $api->return_json(-2000,'',$prefix . ' 模型不能为空！');
+    }
+
+    if( ($provider['model'] === 'custom') && empty($provider['custom_model']) ) {
+        $api->return_json(-2000,'',$prefix . ' 自定义模型不能为空！');
+    }
+}
+
 // 设置 AI 能力
 function set_ai_setting($api) {
     $data['status'] = empty($_POST['status']) ? 'off' : htmlspecialchars(trim($_POST['status']));
-    $data['url'] = empty($_POST['url']) ? '' : trim($_POST['url']);
-    $data['sk'] = empty($_POST['sk']) ? '' : trim($_POST['sk']);
-    $data['model'] = empty($_POST['model']) ? '' : htmlspecialchars(trim($_POST['model']));
-    $data['custom_model'] = empty($_POST['custom_model']) ? '' : htmlspecialchars(trim($_POST['custom_model']));
+    $data['active_provider'] = empty($_POST['active_provider']) ? '' : preg_replace('/[^a-zA-Z0-9_\-]/','',trim($_POST['active_provider']));
+    $data['providers'] = [];
+
+    if( !empty($_POST['providers']) && is_array($_POST['providers']) ) {
+        foreach($_POST['providers'] as $index => $provider) {
+            $normalized_provider = normalize_ai_provider_from_post($provider,$index);
+            $data['providers'][] = $normalized_provider;
+        }
+    }
+
+    if( empty($data['providers']) ) {
+        $data['providers'][] = normalize_ai_provider_from_post([
+            'id' => 'provider_1',
+            'name' => 'OpenAI 兼容接口',
+            'url' => empty($_POST['url']) ? '' : trim($_POST['url']),
+            'sk' => empty($_POST['sk']) ? '' : trim($_POST['sk']),
+            'model' => empty($_POST['model']) ? '' : htmlspecialchars(trim($_POST['model'])),
+            'custom_model' => empty($_POST['custom_model']) ? '' : htmlspecialchars(trim($_POST['custom_model']))
+        ],0);
+    }
+
+    if( empty($data['active_provider']) ) {
+        $data['active_provider'] = $data['providers'][0]['id'];
+    }
 
     if( !in_array($data['status'], ['on','off']) ) {
         $data['status'] = 'off';
     }
 
     if( $data['status'] === 'on' ) {
-        if( empty($data['url']) || !filter_var($data['url'], FILTER_VALIDATE_URL) ) {
-            $api->return_json(-2000,'','请填写正确的 AI API 地址！');
+        $active_provider = [];
+        foreach($data['providers'] as $provider) {
+            if( $provider['id'] === $data['active_provider'] ) {
+                $active_provider = $provider;
+                break;
+            }
         }
 
-        if( empty($data['sk']) ) {
-            $api->return_json(-2000,'','请填写 AI API 密钥！');
+        if( empty($active_provider) ) {
+            $api->return_json(-2000,'','请选择当前使用的 AI Provider！');
         }
 
-        if( empty($data['model']) ) {
-            $api->return_json(-2000,'','请选择 AI 模型！');
-        }
+        validate_ai_provider($api,$active_provider,'当前 Provider');
+    }
 
-        if( ($data['model'] === 'custom') && empty($data['custom_model']) ) {
-            $api->return_json(-2000,'','请填写自定义模型名称！');
+    $legacy_provider = $data['providers'][0];
+    foreach($data['providers'] as $provider) {
+        if( $provider['id'] === $data['active_provider'] ) {
+            $legacy_provider = $provider;
+            break;
         }
     }
+    $data['url'] = $legacy_provider['url'];
+    $data['sk'] = $legacy_provider['sk'];
+    $data['model'] = $legacy_provider['model'];
+    $data['custom_model'] = $legacy_provider['custom_model'];
 
     $api->set_option('ai_setting',json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
 }
@@ -406,12 +475,7 @@ function set_ai_setting($api) {
 // 测试 AI 配置连通性
 function test_ai_setting($api) {
     $token = empty( $_POST['token'] ) ? $_GET['token'] : $_POST['token'];
-    $data = [
-        'url' => empty($_POST['url']) ? '' : trim($_POST['url']),
-        'sk' => empty($_POST['sk']) ? '' : trim($_POST['sk']),
-        'model' => empty($_POST['model']) ? '' : htmlspecialchars(trim($_POST['model'])),
-        'custom_model' => empty($_POST['custom_model']) ? '' : htmlspecialchars(trim($_POST['custom_model']))
-    ];
+    $data = normalize_ai_provider_from_post($_POST,0);
     $api->test_ai_setting($token,$data);
 }
 

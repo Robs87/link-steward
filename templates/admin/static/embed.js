@@ -880,13 +880,170 @@ layui.use(['element','table','layer','form','upload','iconHhysFa'], function(){
     return false; //阻止表单跳转。如果需要表单跳转，去掉这段即可。
   });
 
-  form.on('select(ai_model)', function(data){
-    if( data.value == 'custom' ) {
-      $("#custom_model_item").show();
+  function aiProviderOptions(selected) {
+    var models = [
+      ['', '请选择模型'],
+      ['gpt-4o', 'OpenAI: gpt-4o'],
+      ['gpt-4o-mini', 'OpenAI: gpt-4o-mini'],
+      ['deepseek-chat', 'DeepSeek: deepseek-chat'],
+      ['qwen-plus', '通义千问: qwen-plus'],
+      ['qwen-turbo', '通义千问: qwen-turbo'],
+      ['glm-4-air', '智谱: glm-4-air'],
+      ['deepseek-ai/DeepSeek-V3', '硅基流动: DeepSeek-V3'],
+      ['Qwen/Qwen2.5-72B-Instruct', '硅基流动: Qwen2.5-72B'],
+      ['auto', '自动/服务端默认'],
+      ['custom', '自定义模型']
+    ];
+    return models.map(function(item){
+      var isSelected = item[0] == selected ? ' selected' : '';
+      return '<option value="' + item[0] + '"' + isSelected + '>' + item[1] + '</option>';
+    }).join('');
+  }
+
+  function aiProviderCard(index) {
+    var id = 'provider_' + Date.now() + '_' + index;
+    return '' +
+      '<div class="ai-provider-card" data-index="' + index + '">' +
+        '<div class="ai-provider-head">' +
+          '<div class="ai-provider-title">Provider ' + (index + 1) + '</div>' +
+          '<div class="ai-provider-actions">' +
+            '<button type="button" class="layui-btn layui-btn-primary layui-btn-sm test-ai-provider">测试连接</button>' +
+            '<button type="button" class="layui-btn layui-btn-danger layui-btn-sm remove-ai-provider">删除</button>' +
+          '</div>' +
+        '</div>' +
+        '<input type="hidden" name="providers[' + index + '][id]" value="' + id + '" class="ai-provider-id">' +
+        '<div class="layui-form-item">' +
+          '<label class="layui-form-label">名称</label>' +
+          '<div class="layui-input-inline"><input type="text" name="providers[' + index + '][name]" value="Provider ' + (index + 1) + '" autocomplete="off" placeholder="例如 OpenAI、DeepSeek、本地模型" class="layui-input ai-provider-name"></div>' +
+        '</div>' +
+        '<div class="layui-form-item">' +
+          '<label class="layui-form-label">说明</label>' +
+          '<div class="layui-input-inline"><input type="text" name="providers[' + index + '][description]" autocomplete="off" placeholder="例如 GPT-4o、内网 Ollama、硅基流动等" class="layui-input"></div>' +
+        '</div>' +
+        '<div class="layui-form-item">' +
+          '<label class="layui-form-label">Base URL</label>' +
+          '<div class="layui-input-inline"><input type="text" name="providers[' + index + '][url]" autocomplete="off" placeholder="https://api.openai.com/v1 或完整 /chat/completions 地址" class="layui-input ai-provider-url"></div>' +
+        '</div>' +
+        '<div class="layui-form-item">' +
+          '<label class="layui-form-label">API Key</label>' +
+          '<div class="layui-input-inline"><input type="password" name="providers[' + index + '][sk]" autocomplete="off" placeholder="sk-..." class="layui-input ai-provider-key"><input type="checkbox" class="show-ai-provider-key" title="显示 API Key" lay-filter="show_ai_provider_key"></div>' +
+        '</div>' +
+        '<div class="layui-form-item">' +
+          '<label class="layui-form-label">模型</label>' +
+          '<div class="layui-input-inline"><select name="providers[' + index + '][model]" class="ai-provider-model" lay-filter="ai_provider_model" lay-search>' + aiProviderOptions('') + '</select></div>' +
+        '</div>' +
+        '<div class="layui-form-item ai-custom-model-item" style="display:none;">' +
+          '<label class="layui-form-label">自定义模型</label>' +
+          '<div class="layui-input-inline"><input type="text" name="providers[' + index + '][custom_model]" autocomplete="off" placeholder="例如 qwen2.5:72b、doubao-1-5-pro-32k-250115" class="layui-input ai-provider-custom-model"></div>' +
+        '</div>' +
+      '</div>';
+  }
+
+  function syncAiProviderSelect() {
+    var $select = $("#active_provider");
+    if($select.length == 0) {
+      return;
+    }
+
+    var current = $select.val();
+    $select.empty();
+    $(".ai-provider-card").each(function(i){
+      var $card = $(this);
+      var id = $card.find(".ai-provider-id").val();
+      var name = $card.find(".ai-provider-name").val() || ("Provider " + (i + 1));
+      $card.find(".ai-provider-title").text(name);
+      $select.append($("<option></option>").val(id).text(name));
+    });
+
+    if(current && $select.find('option[value="' + current + '"]').length > 0) {
+      $select.val(current);
     }
     else {
-      $("#custom_model_item").hide();
+      $select.prop('selectedIndex',0);
     }
+
+    form.render('select');
+  }
+
+  function reindexAiProviders() {
+    $(".ai-provider-card").each(function(index){
+      var $card = $(this);
+      $card.attr("data-index",index);
+      $card.find("[name]").each(function(){
+        var name = $(this).attr("name");
+        name = name.replace(/providers\[\d+\]/,'providers[' + index + ']');
+        $(this).attr("name",name);
+      });
+    });
+  }
+
+  form.on('select(ai_provider_model)', function(data){
+    var $card = $(data.elem).closest(".ai-provider-card");
+    if( data.value == 'custom' ) {
+      $card.find(".ai-custom-model-item").show();
+    }
+    else {
+      $card.find(".ai-custom-model-item").hide();
+    }
+  });
+
+  form.on('checkbox(show_ai_provider_key)', function(data){
+    var $card = $(data.elem).closest(".ai-provider-card");
+    $card.find(".ai-provider-key").attr("type",data.elem.checked ? "text" : "password");
+  });
+
+  $("#add_ai_provider").on("click",function(){
+    var index = $(".ai-provider-card").length;
+    $("#ai_provider_list").append(aiProviderCard(index));
+    syncAiProviderSelect();
+  });
+
+  $("#ai_provider_list").on("input",".ai-provider-name",function(){
+    syncAiProviderSelect();
+  });
+
+  $("#ai_provider_list").on("click",".remove-ai-provider",function(){
+    if($(".ai-provider-card").length <= 1) {
+      layer.msg("至少保留一个 Provider！", {icon: 5});
+      return;
+    }
+    $(this).closest(".ai-provider-card").remove();
+    reindexAiProviders();
+    syncAiProviderSelect();
+  });
+
+  $("#ai_provider_list").on("click",".test-ai-provider",function(){
+    var $card = $(this).closest(".ai-provider-card");
+    var model = $card.find(".ai-provider-model").val();
+    var payload = {
+      id: $card.find(".ai-provider-id").val(),
+      name: $card.find(".ai-provider-name").val(),
+      url: $card.find(".ai-provider-url").val(),
+      sk: $card.find(".ai-provider-key").val(),
+      model: model,
+      custom_model: $card.find(".ai-provider-custom-model").val()
+    };
+    var index = layer.load(1);
+    $.post('/index.php?c=api&method=test_ai_setting',payload,function(data,status){
+      layer.close(index);
+      if(data.code == 0) {
+        var result = data.data || {};
+        var msg = data.msg || 'AI连接测试成功！';
+        if(result.provider) {
+          msg += ' Provider：' + result.provider;
+        }
+        if(result.model) {
+          msg += ' 模型：' + result.model;
+        }
+        layer.msg(msg, {icon: 1, time: 3000});
+      }
+      else{
+        layer.msg(data.msg || data.err_msg || 'AI连接测试失败！', {icon: 5, time: 4000});
+      }
+    }).error(function(){
+      layer.close(index);
+      layer.msg('AI连接测试请求失败！', {icon: 5});
+    });
   });
 
   form.on('submit(set_ai_setting)', function(data){
@@ -899,29 +1056,6 @@ layui.use(['element','table','layer','form','upload','iconHhysFa'], function(){
       }
     }).error(function(){
       layer.msg('请求失败，请稍后重试！', {icon: 5});
-    });
-
-    return false;
-  });
-
-  form.on('submit(test_ai_setting)', function(data){
-    var index = layer.load(1);
-    $.post('/index.php?c=api&method=test_ai_setting',data.field,function(data,status){
-      layer.close(index);
-      if(data.code == 0) {
-        var result = data.data || {};
-        var msg = data.msg || 'AI连接测试成功！';
-        if(result.model) {
-          msg += ' 模型：' + result.model;
-        }
-        layer.msg(msg, {icon: 1, time: 3000});
-      }
-      else{
-        layer.msg(data.msg || data.err_msg || 'AI连接测试失败！', {icon: 5, time: 4000});
-      }
-    }).error(function(){
-      layer.close(index);
-      layer.msg('AI连接测试请求失败！', {icon: 5});
     });
 
     return false;

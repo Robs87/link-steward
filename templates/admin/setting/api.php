@@ -56,7 +56,40 @@
     </form>
     </div>
     <div class="layui-col-lg6">
-    <form class="layui-form layui-form-pane" action="">
+    <style>
+        .ai-provider-card {
+            border: 1px solid #e6e6e6;
+            border-radius: 6px;
+            margin-bottom: 14px;
+            padding: 14px 14px 2px 14px;
+            background: #fff;
+        }
+        .ai-provider-head {
+            align-items: center;
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+        .ai-provider-title {
+            color: #333;
+            font-size: 15px;
+            font-weight: 600;
+        }
+        .ai-provider-actions .layui-btn {
+            margin-left: 6px;
+        }
+        .ai-provider-card .layui-form-label {
+            width: 110px;
+        }
+        .ai-provider-card .layui-input-inline {
+            width: calc(100% - 125px);
+        }
+        .ai-provider-card .layui-input-inline .layui-input,
+        .ai-provider-card .layui-input-inline .layui-textarea {
+            width: 100%;
+        }
+    </style>
+    <form class="layui-form layui-form-pane" id="ai_provider_form" action="">
 
         <div class="layui-form-item">
             <label class="layui-form-label" style="width:130px;">AI状态</label>
@@ -67,55 +100,100 @@
         </div>
 
         <div class="layui-form-item">
-            <label class="layui-form-label" style="width:130px;">AI API地址</label>
+            <label class="layui-form-label" style="width:130px;">当前Provider</label>
             <div class="layui-input-inline">
-                <input style="width:400px;" type="text" name="url" value="<?php echo htmlspecialchars($ai_setting['url']); ?>" autocomplete="off" placeholder="https://api.openai.com/v1/chat/completions" class="layui-input">
-            </div>
-        </div>
-
-        <div class="layui-form-item">
-            <label class="layui-form-label" style="width:130px;">AI API密钥</label>
-            <div class="layui-input-inline">
-                <input style="width:400px;" type="password" name="sk" value="<?php echo htmlspecialchars($ai_setting['sk']); ?>" autocomplete="off" placeholder="sk-..." class="layui-input">
-            </div>
-        </div>
-
-        <div class="layui-form-item">
-            <label class="layui-form-label" style="width:130px;">模型</label>
-            <div class="layui-input-inline">
-                <select name="model" lay-filter="ai_model" id="ai_model" lay-search>
-                    <option value="">请选择模型</option>
-                    <?php
-                    $models = [
-                        'gpt-4o' => 'gpt-4o',
-                        'gpt-4o-mini' => 'gpt-4o-mini',
-                        'deepseek-chat' => 'deepseek-chat',
-                        'qwen-plus' => 'qwen-plus',
-                        'qwen-turbo' => 'qwen-turbo',
-                        'glm-4-air' => 'glm-4-air',
-                        'deepseek-ai/DeepSeek-V3' => 'DeepSeek-V3（硅基流动）',
-                        'Qwen/Qwen2.5-72B-Instruct' => 'Qwen2.5-72B（硅基流动）',
-                        'custom' => '自定义模型'
-                    ];
-                    foreach($models as $value => $label) {
-                        $selected = ($ai_setting['model'] === $value) ? 'selected' : '';
-                        echo '<option value="'.htmlspecialchars($value).'" '.$selected.'>'.htmlspecialchars($label).'</option>';
-                    }
-                    ?>
+                <select name="active_provider" id="active_provider" lay-filter="active_provider">
+                    <?php foreach($ai_providers as $provider) { ?>
+                    <option value="<?php echo htmlspecialchars($provider['id']); ?>" <?php echo ($ai_setting['active_provider'] === $provider['id']) ? 'selected' : ''; ?>><?php echo htmlspecialchars($provider['name']); ?></option>
+                    <?php } ?>
                 </select>
             </div>
         </div>
 
-        <div class="layui-form-item" id="custom_model_item" style="<?php echo ($ai_setting['model'] === 'custom') ? '' : 'display:none;'; ?>">
-            <label class="layui-form-label" style="width:130px;">自定义模型</label>
-            <div class="layui-input-inline">
-                <input style="width:400px;" type="text" name="custom_model" value="<?php echo htmlspecialchars($ai_setting['custom_model']); ?>" autocomplete="off" placeholder="例如 doubao-1-5-pro-32k-250115" class="layui-input">
+        <div id="ai_provider_list">
+            <?php
+            $models = [
+                'gpt-4o' => 'OpenAI: gpt-4o',
+                'gpt-4o-mini' => 'OpenAI: gpt-4o-mini',
+                'deepseek-chat' => 'DeepSeek: deepseek-chat',
+                'qwen-plus' => '通义千问: qwen-plus',
+                'qwen-turbo' => '通义千问: qwen-turbo',
+                'glm-4-air' => '智谱: glm-4-air',
+                'deepseek-ai/DeepSeek-V3' => '硅基流动: DeepSeek-V3',
+                'Qwen/Qwen2.5-72B-Instruct' => '硅基流动: Qwen2.5-72B',
+                'auto' => '自动/服务端默认',
+                'custom' => '自定义模型'
+            ];
+            foreach($ai_providers as $index => $provider) {
+            ?>
+            <div class="ai-provider-card" data-index="<?php echo intval($index); ?>">
+                <div class="ai-provider-head">
+                    <div class="ai-provider-title"><?php echo htmlspecialchars($provider['name']); ?></div>
+                    <div class="ai-provider-actions">
+                        <button type="button" class="layui-btn layui-btn-primary layui-btn-sm test-ai-provider">测试连接</button>
+                        <button type="button" class="layui-btn layui-btn-danger layui-btn-sm remove-ai-provider">删除</button>
+                    </div>
+                </div>
+
+                <input type="hidden" name="providers[<?php echo intval($index); ?>][id]" value="<?php echo htmlspecialchars($provider['id']); ?>" class="ai-provider-id">
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">名称</label>
+                    <div class="layui-input-inline">
+                        <input type="text" name="providers[<?php echo intval($index); ?>][name]" value="<?php echo htmlspecialchars($provider['name']); ?>" autocomplete="off" placeholder="例如 OpenAI、DeepSeek、本地模型" class="layui-input ai-provider-name">
+                    </div>
+                </div>
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">说明</label>
+                    <div class="layui-input-inline">
+                        <input type="text" name="providers[<?php echo intval($index); ?>][description]" value="<?php echo htmlspecialchars($provider['description']); ?>" autocomplete="off" placeholder="例如 GPT-4o、内网 Ollama、硅基流动等" class="layui-input">
+                    </div>
+                </div>
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">Base URL</label>
+                    <div class="layui-input-inline">
+                        <input type="text" name="providers[<?php echo intval($index); ?>][url]" value="<?php echo htmlspecialchars($provider['url']); ?>" autocomplete="off" placeholder="https://api.openai.com/v1 或完整 /chat/completions 地址" class="layui-input ai-provider-url">
+                    </div>
+                </div>
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">API Key</label>
+                    <div class="layui-input-inline">
+                        <input type="password" name="providers[<?php echo intval($index); ?>][sk]" value="<?php echo htmlspecialchars($provider['sk']); ?>" autocomplete="off" placeholder="sk-..." class="layui-input ai-provider-key">
+                        <input type="checkbox" class="show-ai-provider-key" title="显示 API Key" lay-filter="show_ai_provider_key">
+                    </div>
+                </div>
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">模型</label>
+                    <div class="layui-input-inline">
+                        <select name="providers[<?php echo intval($index); ?>][model]" class="ai-provider-model" lay-filter="ai_provider_model" lay-search>
+                            <option value="">请选择模型</option>
+                            <?php
+                            foreach($models as $value => $label) {
+                                $selected = ($provider['model'] === $value) ? 'selected' : '';
+                                echo '<option value="'.htmlspecialchars($value).'" '.$selected.'>'.htmlspecialchars($label).'</option>';
+                            }
+                            ?>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="layui-form-item ai-custom-model-item" style="<?php echo ($provider['model'] === 'custom') ? '' : 'display:none;'; ?>">
+                    <label class="layui-form-label">自定义模型</label>
+                    <div class="layui-input-inline">
+                        <input type="text" name="providers[<?php echo intval($index); ?>][custom_model]" value="<?php echo htmlspecialchars($provider['custom_model']); ?>" autocomplete="off" placeholder="例如 qwen2.5:72b、doubao-1-5-pro-32k-250115" class="layui-input ai-provider-custom-model">
+                    </div>
+                </div>
             </div>
+            <?php } ?>
         </div>
 
         <div class="layui-form-item">
+            <button type="button" class="layui-btn layui-btn-primary" id="add_ai_provider">添加Provider</button>
             <button class="layui-btn layui-btn-normal" lay-submit="" lay-filter="set_ai_setting">保存AI设置</button>
-            <button class="layui-btn" lay-submit="" lay-filter="test_ai_setting">测试AI连接</button>
         </div>
 
     </form>

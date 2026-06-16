@@ -104,6 +104,8 @@ if( $page == 'setting/api' ) {
     $ai_setting = json_decode($ai_setting, true);
     $default_ai_setting = [
         'status' => 'off',
+        'active_provider' => '',
+        'providers' => [],
         'url' => '',
         'sk' => '',
         'model' => '',
@@ -114,6 +116,59 @@ if( $page == 'setting/api' ) {
     }
     else{
         $ai_setting = array_merge($default_ai_setting,$ai_setting);
+    }
+
+    if( empty($ai_setting['providers']) || !is_array($ai_setting['providers']) ) {
+        $legacy_provider = [
+            'id' => 'provider_1',
+            'name' => 'OpenAI 兼容接口',
+            'description' => '',
+            'url' => $ai_setting['url'],
+            'sk' => $ai_setting['sk'],
+            'model' => $ai_setting['model'],
+            'custom_model' => $ai_setting['custom_model']
+        ];
+        $ai_setting['providers'] = [$legacy_provider];
+    }
+
+    $ai_providers = [];
+    foreach($ai_setting['providers'] as $index => $provider) {
+        if( !is_array($provider) ) {
+            continue;
+        }
+        $default_provider = [
+            'id' => 'provider_' . ($index + 1),
+            'name' => '',
+            'description' => '',
+            'url' => '',
+            'sk' => '',
+            'model' => '',
+            'custom_model' => ''
+        ];
+        $provider = array_merge($default_provider,$provider);
+        if( empty($provider['id']) ) {
+            $provider['id'] = 'provider_' . ($index + 1);
+        }
+        if( empty($provider['name']) ) {
+            $provider['name'] = 'Provider ' . ($index + 1);
+        }
+        $ai_providers[] = $provider;
+    }
+
+    if( empty($ai_providers) ) {
+        $ai_providers[] = [
+            'id' => 'provider_1',
+            'name' => 'OpenAI 兼容接口',
+            'description' => '',
+            'url' => '',
+            'sk' => '',
+            'model' => '',
+            'custom_model' => ''
+        ];
+    }
+
+    if( empty($ai_setting['active_provider']) ) {
+        $ai_setting['active_provider'] = $ai_providers[0]['id'];
     }
     
 }
