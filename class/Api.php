@@ -3290,6 +3290,30 @@ class Api {
         ],'success');
     }
 
+    /**
+     * 测试当前表单中的 AI 配置是否可用。
+     */
+    public function test_ai_setting($token,$data) {
+        $this->auth($token);
+        $ai = $this->normalize_ai_setting($data);
+        $messages = [
+            [
+                'role' => 'system',
+                'content' => '你是 Link Steward 的 AI 配置连通性测试助手。请只回复 pong。'
+            ],
+            [
+                'role' => 'user',
+                'content' => 'ping'
+            ]
+        ];
+
+        $content = $this->call_ai_chat_completion($ai,$messages,0,1,false);
+        $this->return_json(0,[
+            'model' => $ai['model'],
+            'reply' => mb_substr($content,0,120,'UTF-8')
+        ],'AI连接测试成功！');
+    }
+
     private function get_ai_setting() {
         $api = $this->get_options("ai_setting");
         if( !$api ) {
@@ -3300,11 +3324,18 @@ class Api {
             $this->return_json(-2000,'','AI功能未启用！');
         }
 
-        $url = empty($api->url) ? '' : trim($api->url);
-        $key = empty($api->sk) ? '' : trim($api->sk);
-        $model = empty($api->model) ? '' : trim($api->model);
+        return $this->normalize_ai_setting($api);
+    }
+
+    private function normalize_ai_setting($api) {
+        $is_array = is_array($api);
+        $url = $is_array ? (empty($api['url']) ? '' : trim($api['url'])) : (empty($api->url) ? '' : trim($api->url));
+        $key = $is_array ? (empty($api['sk']) ? '' : trim($api['sk'])) : (empty($api->sk) ? '' : trim($api->sk));
+        $model = $is_array ? (empty($api['model']) ? '' : trim($api['model'])) : (empty($api->model) ? '' : trim($api->model));
+        $custom_model = $is_array ? (empty($api['custom_model']) ? '' : trim($api['custom_model'])) : (empty($api->custom_model) ? '' : trim($api->custom_model));
+
         if( $model === 'custom' ) {
-            $model = empty($api->custom_model) ? '' : trim($api->custom_model);
+            $model = $custom_model;
         }
 
         if( empty($url) || empty($key) || empty($model) ) {

@@ -403,6 +403,18 @@ function set_ai_setting($api) {
     $api->set_option('ai_setting',json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
 }
 
+// 测试 AI 配置连通性
+function test_ai_setting($api) {
+    $token = empty( $_POST['token'] ) ? $_GET['token'] : $_POST['token'];
+    $data = [
+        'url' => empty($_POST['url']) ? '' : trim($_POST['url']),
+        'sk' => empty($_POST['sk']) ? '' : trim($_POST['sk']),
+        'model' => empty($_POST['model']) ? '' : htmlspecialchars(trim($_POST['model'])),
+        'custom_model' => empty($_POST['custom_model']) ? '' : htmlspecialchars(trim($_POST['custom_model']))
+    ];
+    $api->test_ai_setting($token,$data);
+}
+
 // 开源版不再按远程订阅限制本地功能。
 function _deny_set($content,$err_msg) {
     return TRUE;

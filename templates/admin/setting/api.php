@@ -115,6 +115,7 @@
 
         <div class="layui-form-item">
             <button class="layui-btn layui-btn-normal" lay-submit="" lay-filter="set_ai_setting">保存AI设置</button>
+            <button class="layui-btn" lay-submit="" lay-filter="test_ai_setting">测试AI连接</button>
         </div>
 
     </form>

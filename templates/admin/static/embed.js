@@ -904,6 +904,29 @@ layui.use(['element','table','layer','form','upload','iconHhysFa'], function(){
     return false;
   });
 
+  form.on('submit(test_ai_setting)', function(data){
+    var index = layer.load(1);
+    $.post('/index.php?c=api&method=test_ai_setting',data.field,function(data,status){
+      layer.close(index);
+      if(data.code == 0) {
+        var result = data.data || {};
+        var msg = data.msg || 'AI连接测试成功！';
+        if(result.model) {
+          msg += ' 模型：' + result.model;
+        }
+        layer.msg(msg, {icon: 1, time: 3000});
+      }
+      else{
+        layer.msg(data.msg || data.err_msg || 'AI连接测试失败！', {icon: 5, time: 4000});
+      }
+    }).error(function(){
+      layer.close(index);
+      layer.msg('AI连接测试请求失败！', {icon: 5});
+    });
+
+    return false;
+  });
+
   //添加链接
   form.on('submit(add_link)', function(data){
     $.post('/index.php?c=api&method=add_link',data.field,function(data,status){
