@@ -130,6 +130,7 @@
                 <div class="ai-provider-head">
                     <div class="ai-provider-title"><?php echo htmlspecialchars($provider['name']); ?></div>
                     <div class="ai-provider-actions">
+                        <button type="button" class="layui-btn layui-btn-primary layui-btn-sm fetch-ai-models">获取模型列表</button>
                         <button type="button" class="layui-btn layui-btn-primary layui-btn-sm test-ai-provider">测试连接</button>
                         <button type="button" class="layui-btn layui-btn-danger layui-btn-sm remove-ai-provider">删除</button>
                     </div>
@@ -155,6 +156,7 @@
                     <label class="layui-form-label">Base URL</label>
                     <div class="layui-input-inline">
                         <input type="text" name="providers[<?php echo intval($index); ?>][url]" value="<?php echo htmlspecialchars($provider['url']); ?>" autocomplete="off" placeholder="https://api.openai.com/v1 或完整 /chat/completions 地址" class="layui-input ai-provider-url">
+                        <div class="layui-form-mid layui-word-aux">填写地址和 API Key 后，点击“获取模型列表”；需支持 /models 接口。</div>
                     </div>
                 </div>
 
@@ -172,6 +174,9 @@
                         <select name="providers[<?php echo intval($index); ?>][model]" class="ai-provider-model" lay-filter="ai_provider_model" lay-search>
                             <option value="">请选择模型</option>
                             <?php
+                            if( $provider['model'] !== '' && !isset($models[$provider['model']]) ) {
+                                echo '<option value="'.htmlspecialchars($provider['model'],ENT_QUOTES).'" selected>'.htmlspecialchars($provider['model']).'</option>';
+                            }
                             foreach($models as $value => $label) {
                                 $selected = ($provider['model'] === $value) ? 'selected' : '';
                                 echo '<option value="'.htmlspecialchars($value).'" '.$selected.'>'.htmlspecialchars($label).'</option>';

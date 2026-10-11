@@ -472,6 +472,12 @@ function set_ai_setting($api) {
     $api->set_option('ai_setting',json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
 }
 
+// 获取当前表单中的模型列表
+function get_ai_models($api) {
+    $token = empty($_POST['token']) ? (empty($_GET['token']) ? '' : $_GET['token']) : $_POST['token'];
+    $api->get_ai_models($token,normalize_ai_provider_from_post($_POST,0));
+}
+
 // 测试 AI 配置连通性
 function test_ai_setting($api) {
     $token = empty( $_POST['token'] ) ? (empty($_GET['token']) ? '' : $_GET['token']) : $_POST['token'];

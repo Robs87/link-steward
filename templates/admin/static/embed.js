@@ -907,6 +907,7 @@ layui.use(['element','table','layer','form','upload','iconHhysFa'], function(){
         '<div class="ai-provider-head">' +
           '<div class="ai-provider-title">Provider ' + (index + 1) + '</div>' +
           '<div class="ai-provider-actions">' +
+            '<button type="button" class="layui-btn layui-btn-primary layui-btn-sm fetch-ai-models">获取模型列表</button>' +
             '<button type="button" class="layui-btn layui-btn-primary layui-btn-sm test-ai-provider">测试连接</button>' +
             '<button type="button" class="layui-btn layui-btn-danger layui-btn-sm remove-ai-provider">删除</button>' +
           '</div>' +
@@ -922,7 +923,8 @@ layui.use(['element','table','layer','form','upload','iconHhysFa'], function(){
         '</div>' +
         '<div class="layui-form-item">' +
           '<label class="layui-form-label">Base URL</label>' +
-          '<div class="layui-input-inline"><input type="text" name="providers[' + index + '][url]" autocomplete="off" placeholder="https://api.openai.com/v1 或完整 /chat/completions 地址" class="layui-input ai-provider-url"></div>' +
+          '<div class="layui-input-inline"><input type="text" name="providers[' + index + '][url]" autocomplete="off" placeholder="https://api.openai.com/v1 或完整 /chat/completions 地址" class="layui-input ai-provider-url">' +
+            '<div class="layui-form-mid layui-word-aux">填写地址和 API Key 后，点击“获取模型列表”；需支持 /models 接口。</div></div>' +
         '</div>' +
         '<div class="layui-form-item">' +
           '<label class="layui-form-label">API Key</label>' +
@@ -1010,6 +1012,53 @@ layui.use(['element','table','layer','form','upload','iconHhysFa'], function(){
     $(this).closest(".ai-provider-card").remove();
     reindexAiProviders();
     syncAiProviderSelect();
+  });
+
+  $("#ai_provider_list").on("click",".fetch-ai-models",function(){
+    var $button = $(this);
+    var $card = $button.closest(".ai-provider-card");
+    var payload = {
+      url: $.trim($card.find(".ai-provider-url").val()),
+      sk: $.trim($card.find(".ai-provider-key").val())
+    };
+    if(!payload.url || !payload.sk) {
+      layer.msg('请先填写 API 地址和 API Key！', {icon: 5});
+      return;
+    }
+    if($button.prop('disabled')) { return; }
+    $button.prop('disabled',true).text('获取中…');
+    $.ajax({
+      url: '/index.php?c=api&method=get_ai_models',
+      type: 'POST', data: payload, dataType: 'json', timeout: 35000
+    }).done(function(data){
+      if(payload.url !== $.trim($card.find(".ai-provider-url").val()) ||
+         payload.sk !== $.trim($card.find(".ai-provider-key").val()) || !$.contains(document,$card[0])) {
+        layer.msg('配置已改变，请重新获取模型列表。', {icon: 5});
+        return;
+      }
+      if(data.code !== 0 || !data.data || !Array.isArray(data.data.models) || !data.data.models.length) {
+        layer.msg(data.msg || data.err_msg || '未获取到模型，请使用自定义模型。', {icon: 5});
+        return;
+      }
+      var $select = $card.find(".ai-provider-model");
+      var selected = $select.val() || '';
+      $select.empty().append($('<option></option>').val('').text('请选择模型'));
+      data.data.models.forEach(function(id){
+        if(typeof id === 'string' && id !== 'custom') {
+          $select.append($('<option></option>').val(id).text(id));
+        }
+      });
+      if(selected && selected !== 'custom' && data.data.models.indexOf(selected) === -1) {
+        $select.append($('<option></option>').val(selected).text(selected + '（当前选择）'));
+      }
+      $select.append($('<option></option>').val('custom').text('自定义模型')).val(selected);
+      form.render('select');
+      layer.msg('已获取 ' + data.data.models.length + ' 个模型，请选择后保存设置。', {icon: 1});
+    }).fail(function(){
+      layer.msg('获取模型列表请求失败，请检查网络后重试。', {icon: 5});
+    }).always(function(){
+      $button.prop('disabled',false).text('获取模型列表');
+    });
   });
 
   $("#ai_provider_list").on("click",".test-ai-provider",function(){

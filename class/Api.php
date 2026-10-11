@@ -3293,6 +3293,64 @@ class Api {
         ],'AI连接测试成功！');
     }
 
+    /** 获取当前表单对应的 OpenAI 兼容模型列表，无需先选择模型。 */
+    public function get_ai_models($token,$data) {
+        $this->auth($token);
+        $url = isset($data['url']) ? trim($data['url']) : '';
+        $key = isset($data['sk']) ? trim($data['sk']) : '';
+        $parts = parse_url($url);
+        if( !filter_var($url,FILTER_VALIDATE_URL) || !$parts ||
+            !isset($parts['scheme']) || !in_array(strtolower($parts['scheme']),['http','https']) ||
+            isset($parts['user']) || isset($parts['pass']) || isset($parts['query']) || isset($parts['fragment']) ) {
+            $this->return_json(-2000,'','请输入有效的 HTTP/HTTPS API 地址，不要包含账号、查询参数或片段。');
+        }
+        if( $key === '' || preg_match('/[\r\n]/',$key) ) {
+            $this->return_json(-2000,'','请填写有效的 API Key 后获取模型列表。');
+        }
+        $url = rtrim($url,'/');
+        $url = preg_replace('~/chat/completions$~i','',$url);
+        if( !preg_match('~/models$~i',$url) ) {
+            $url .= '/models';
+        }
+        $ch = curl_init($url);
+        curl_setopt_array($ch,[
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER => ['Authorization: Bearer '.$key,'Accept: application/json'],
+            CURLOPT_CONNECTTIMEOUT => 10,
+            CURLOPT_TIMEOUT => 30,
+            CURLOPT_FOLLOWLOCATION => false,
+            CURLOPT_PROTOCOLS => CURLPROTO_HTTP | CURLPROTO_HTTPS
+        ]);
+        $response = curl_exec($ch);
+        $http_code = curl_getinfo($ch,CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        if( $response === false ) {
+            $this->return_json(-2000,'','模型列表请求失败，请检查地址、网络和服务可用性。');
+        }
+        if( $http_code < 200 || $http_code >= 300 ) {
+            $hint = ($http_code === 401 || $http_code === 403) ? '，请检查密钥和权限' : '，请确认服务支持 /models 接口';
+            $this->return_json(-2000,'','获取模型列表失败（HTTP '.$http_code.'）'.$hint.'。');
+        }
+        $body = json_decode($response,true);
+        if( !is_array($body) || !isset($body['data']) || !is_array($body['data']) ) {
+            $this->return_json(-2000,'','模型列表格式不兼容，请使用自定义模型。');
+        }
+        $models = [];
+        foreach($body['data'] as $item) {
+            if( is_array($item) && isset($item['id']) && is_string($item['id']) ) {
+                $id = trim($item['id']);
+                if( $id !== '' && !in_array($id,$models,true) ) {
+                    $models[] = $id;
+                }
+            }
+        }
+        if( empty($models) ) {
+            $this->return_json(-2000,'','服务未返回可用模型，请使用自定义模型。');
+        }
+        sort($models,SORT_STRING);
+        $this->return_json(0,['models' => $models],'模型列表获取成功！');
+    }
+
     private function get_ai_setting() {
         $api = $this->get_options("ai_setting");
         if( !$api ) {
