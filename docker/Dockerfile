@@ -1,6 +1,9 @@
 FROM php:7.4-apache
 
-RUN apt-get update \
+# Debian Bullseye 的安全更新已迁入归档源，保留现有 PHP 运行版本。
+RUN sed -i 's|http://deb.debian.org/debian-security|https://archive.debian.org/debian-security|g' /etc/apt/sources.list \
+  && rm -rf /var/lib/apt/lists/* \
+  && apt-get update \
   && apt-get install -y --no-install-recommends libsqlite3-dev libcurl4-openssl-dev zlib1g-dev \
   && docker-php-ext-install pdo_sqlite curl \
   && a2enmod rewrite access_compat \

@@ -9,3 +9,8 @@ data/backup
 data/upload
 data/templates
 class/cache
+
+.planning
+task_plan.md
+findings.md
+progress.md
