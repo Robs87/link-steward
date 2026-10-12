@@ -928,7 +928,7 @@ layui.use(['element','table','layer','form','upload','iconHhysFa'], function(){
         '</div>' +
         '<div class="layui-form-item">' +
           '<label class="layui-form-label">API Key</label>' +
-          '<div class="layui-input-inline"><input type="password" name="providers[' + index + '][sk]" autocomplete="off" placeholder="sk-..." class="layui-input ai-provider-key"><input type="checkbox" class="show-ai-provider-key" title="显示 API Key" lay-filter="show_ai_provider_key"></div>' +
+          '<div class="layui-input-inline"><input type="password" name="providers[' + index + '][sk]" autocomplete="new-password" placeholder="请输入 API Key" class="layui-input ai-provider-key"></div>' +
         '</div>' +
         '<div class="layui-form-item">' +
           '<label class="layui-form-label">模型</label>' +
@@ -989,11 +989,6 @@ layui.use(['element','table','layer','form','upload','iconHhysFa'], function(){
     }
   });
 
-  form.on('checkbox(show_ai_provider_key)', function(data){
-    var $card = $(data.elem).closest(".ai-provider-card");
-    $card.find(".ai-provider-key").attr("type",data.elem.checked ? "text" : "password");
-  });
-
   $("#add_ai_provider").on("click",function(){
     var index = $(".ai-provider-card").length;
     $("#ai_provider_list").append(aiProviderCard(index));
@@ -1018,6 +1013,7 @@ layui.use(['element','table','layer','form','upload','iconHhysFa'], function(){
     var $button = $(this);
     var $card = $button.closest(".ai-provider-card");
     var payload = {
+      id: $card.find(".ai-provider-id").val(),
       url: $.trim($card.find(".ai-provider-url").val()),
       sk: $.trim($card.find(".ai-provider-key").val())
     };

@@ -152,6 +152,7 @@ if( $page == 'setting/api' ) {
         if( empty($provider['name']) ) {
             $provider['name'] = 'Provider ' . ($index + 1);
         }
+        $provider['sk'] = empty($provider['sk']) ? '' : 'MASKED_KEY';
         $ai_providers[] = $provider;
     }
 
@@ -170,6 +171,7 @@ if( $page == 'setting/api' ) {
     if( empty($ai_setting['active_provider']) ) {
         $ai_setting['active_provider'] = $ai_providers[0]['id'];
     }
+    $ai_setting['sk'] = empty($ai_setting['sk']) ? '' : 'MASKED_KEY';
     
 }
 

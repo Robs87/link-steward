@@ -163,8 +163,7 @@
                 <div class="layui-form-item">
                     <label class="layui-form-label">API Key</label>
                     <div class="layui-input-inline">
-                        <input type="password" name="providers[<?php echo intval($index); ?>][sk]" value="<?php echo htmlspecialchars($provider['sk']); ?>" autocomplete="off" placeholder="sk-..." class="layui-input ai-provider-key">
-                        <input type="checkbox" class="show-ai-provider-key" title="显示 API Key" lay-filter="show_ai_provider_key">
+                        <input type="password" name="providers[<?php echo intval($index); ?>][sk]" value="<?php echo htmlspecialchars($provider['sk']); ?>" autocomplete="new-password" placeholder="<?php echo $provider['sk'] !== '' ? '已配置，留空保持不变' : '请输入 API Key'; ?>" class="layui-input ai-provider-key">
                     </div>
                 </div>
 

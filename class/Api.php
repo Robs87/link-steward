@@ -8,6 +8,7 @@
 //载入通用函数
 require("./functions/helper.php");
 class Api {
+    const AI_KEY_MASK = 'MASKED_KEY';
     protected $db;
     public function __construct($db){
         define("API_URL",'');
@@ -1953,6 +1954,9 @@ class Api {
     public function set_option($key,$value = '') {
         // 验证授权
         $this->auth($token);
+        if( $key === 'ai_setting' ) {
+            $value = $this->preserve_ai_provider_keys($value);
+        }
         $key = htmlspecialchars(trim($key));
         //如果key是空的
         if( empty($key) ) {
@@ -2014,8 +2018,10 @@ class Api {
         if( empty($key) ) {
             $this->return_json(-2000,'','key不能为空！');
         }
+        if( $key === 'ai_setting' ) {
+            $value = $this->preserve_ai_provider_keys($value);
+        }
         
-
         $count = $this->db->count("on_options", [
             "key" => $key
         ]);
@@ -3268,11 +3274,106 @@ class Api {
         ],'success');
     }
 
+    /** Restore masked/blank provider keys from server-side settings. */
+    private function restore_ai_provider_key($provider) {
+        if( !is_array($provider) || (!empty($provider['sk']) && $provider['sk'] !== self::AI_KEY_MASK) ) {
+            return $provider;
+        }
+        $saved = json_decode($this->db->get('on_options','value',['key' => 'ai_setting']),true);
+        if( !is_array($saved) ) {
+            return $provider;
+        }
+        $provider_id = isset($provider['id']) ? $provider['id'] : '';
+        if( !empty($saved['providers']) && is_array($saved['providers']) ) {
+            foreach($saved['providers'] as $saved_provider) {
+                if( is_array($saved_provider) && !empty($saved_provider['sk']) &&
+                    ((!empty($provider_id) && isset($saved_provider['id']) && $saved_provider['id'] === $provider_id) || empty($provider_id)) ) {
+                    $provider['sk'] = $saved_provider['sk'];
+                    return $provider;
+                }
+            }
+        }
+        if( !empty($saved['sk']) ) {
+            $provider['sk'] = $saved['sk'];
+        }
+        return $provider;
+    }
+
+    /** Keep stored secrets when a settings form submits its mask unchanged. */
+    private function preserve_ai_provider_keys($value) {
+        $submitted = json_decode($value,true);
+        if( !is_array($submitted) ) {
+            return $value;
+        }
+        $saved = json_decode($this->db->get('on_options','value',['key' => 'ai_setting']),true);
+        if( !is_array($saved) ) {
+            return $value;
+        }
+        if( (empty($submitted['sk']) || $submitted['sk'] === self::AI_KEY_MASK) && !empty($saved['sk']) ) {
+            $submitted['sk'] = $saved['sk'];
+        }
+        $saved_providers = isset($saved['providers']) && is_array($saved['providers']) ? $saved['providers'] : [];
+        if( !empty($submitted['providers']) && is_array($submitted['providers']) ) {
+            foreach($submitted['providers'] as &$provider) {
+                if( !is_array($provider) || (!empty($provider['sk']) && $provider['sk'] !== self::AI_KEY_MASK) ) {
+                    continue;
+                }
+                foreach($saved_providers as $saved_provider) {
+                    if( is_array($saved_provider) && !empty($saved_provider['sk']) &&
+                        isset($provider['id'],$saved_provider['id']) && $provider['id'] === $saved_provider['id'] ) {
+                        $provider['sk'] = $saved_provider['sk'];
+                        break;
+                    }
+                }
+                if( empty($provider['sk']) && !empty($saved['sk']) && count($submitted['providers']) === 1 ) {
+                    $provider['sk'] = $saved['sk'];
+                }
+            }
+            unset($provider);
+        }
+        $active_id = isset($submitted['active_provider']) ? $submitted['active_provider'] : '';
+        foreach($submitted['providers'] as $provider) {
+            if( is_array($provider) && isset($provider['id']) && $provider['id'] === $active_id ) {
+                $active = $provider;
+                break;
+            }
+        }
+        if( !isset($active) && !empty($submitted['providers'][0]) ) {
+            $active = $submitted['providers'][0];
+        }
+        if( isset($active) ) {
+            $submitted['url'] = isset($active['url']) ? $active['url'] : '';
+            $submitted['sk'] = isset($active['sk']) ? $active['sk'] : '';
+            $submitted['model'] = isset($active['model']) ? $active['model'] : '';
+            $submitted['custom_model'] = isset($active['custom_model']) ? $active['custom_model'] : '';
+        }
+        return json_encode($submitted,JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    }
+
+    private function mask_ai_setting($setting) {
+        if( !is_array($setting) ) {
+            return $setting;
+        }
+        if( isset($setting['providers']) && is_array($setting['providers']) ) {
+            foreach($setting['providers'] as &$provider) {
+                if( is_array($provider) ) {
+                    $provider['sk'] = empty($provider['sk']) ? '' : self::AI_KEY_MASK;
+                }
+            }
+            unset($provider);
+        }
+        if( isset($setting['sk']) ) {
+            $setting['sk'] = empty($setting['sk']) ? '' : self::AI_KEY_MASK;
+        }
+        return $setting;
+    }
+
     /**
      * 测试当前表单中的 AI 配置是否可用。
      */
     public function test_ai_setting($token,$data) {
         $this->auth($token);
+        $data = $this->restore_ai_provider_key($data);
         $ai = $this->normalize_ai_setting($data);
         $messages = [
             [
@@ -3296,6 +3397,7 @@ class Api {
     /** 获取当前表单对应的 OpenAI 兼容模型列表，无需先选择模型。 */
     public function get_ai_models($token,$data) {
         $this->auth($token);
+        $data = $this->restore_ai_provider_key($data);
         $url = isset($data['url']) ? trim($data['url']) : '';
         $key = isset($data['sk']) ? trim($data['sk']) : '';
         $parts = parse_url($url);
@@ -3540,7 +3642,12 @@ class Api {
         if( empty($options) ) {
             $this->return_json(-2000,'','获取参数失败！');
         }
-        $result = json_decode($options);
+        if( $key === 'ai_setting' ) {
+            $result = $this->mask_ai_setting(json_decode($options,true));
+        }
+        else {
+            $result = json_decode($options);
+        }
         // 获取成功
         $this->return_json(200,$result,'success');
     }
